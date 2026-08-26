@@ -1,0 +1,117 @@
+plugins {
+    id 'net.fabricmc.fabric-loom' version "${loom_version}"
+    id 'maven-publish'
+}
+
+def repositoryRoot = file('..')
+def profileId = "${minecraft_version}-fabric"
+def rinlibDir = providers.gradleProperty('rinlibDir').orNull
+def rinlibJar = rinlibDir == null ? null : file("${rinlibDir}/rinlib-${rinlib_version}+${minecraft_version}-fabric.jar")
+def hasNoMojangMappings = minecraft_version == '26.2'
+def dependencyConfiguration = hasNoMojangMappings ? 'implementation' : 'modImplementation'
+
+version = "${mod_version}+${minecraft_version}-fabric"
+group = project.maven_group
+base.archivesName = project.archives_base_name
+
+repositories {
+    mavenCentral()
+    maven { url = 'https://maven.fabricmc.net' }
+    maven { url = 'https://maven.twelveiterations.com/repository/maven-public/' }
+    exclusiveContent {
+        forRepository { maven { url = 'https://api.modrinth.com/maven' } }
+        filter { includeGroup 'maven.modrinth' }
+    }
+}
+
+loom {
+    splitEnvironmentSourceSets()
+    mods {
+        waystone_emeralds {
+            sourceSet sourceSets.main
+        }
+    }
+}
+
+dependencies {
+    minecraft "com.mojang:minecraft:${minecraft_version}"
+    if (!hasNoMojangMappings) {
+        mappings loom.officialMojangMappings()
+    }
+    add(dependencyConfiguration, "net.fabricmc:fabric-loader:${loader_version}")
+    add(dependencyConfiguration, "net.fabricmc.fabric-api:fabric-api:${fabric_api_version}")
+    add(dependencyConfiguration, "maven.modrinth:balm:${balm_version}")
+    add(dependencyConfiguration, "maven.modrinth:waystones:${waystones_version}")
+    if (source_generation == 'shogi') {
+        add(dependencyConfiguration, "maven.modrinth:shogi:${shogi_version}")
+        compileOnly files(new File(repositoryRoot, "build/profile-dependencies/shogi-api-${profileId}.jar"))
+    }
+    if (rinlibJar != null) {
+        implementation files(rinlibJar)
+    }
+}
+
+sourceSets.main.java {
+    srcDir new File(repositoryRoot, 'common/src/main/java')
+    srcDir new File(repositoryRoot, "versions/${source_generation}/src/main/java")
+}
+sourceSets.main.resources {
+    srcDir new File(repositoryRoot, 'common/src/main/resources')
+    srcDir layout.buildDirectory.dir('generated/profileResources')
+}
+
+def generateProfileResources = tasks.register('generateProfileResources') {
+    def outputDir = layout.buildDirectory.dir('generated/profileResources')
+    outputs.dir outputDir
+    inputs.property 'profileId', profileId
+    inputs.files fileTree(new File(repositoryRoot, 'templates'))
+    doLast {
+        def out = outputDir.get().asFile
+        delete out
+        out.mkdirs()
+        copy {
+            from new File(repositoryRoot, 'templates/paid_waystones.mixins.json')
+            into out
+            expand(mixin_class: source_generation == 'shogi' ? 'ItemCostMixin' : 'ItemRequirementMixin')
+        }
+        copy {
+            from new File(repositoryRoot, 'templates/fabric.mod.json')
+            into out
+            expand(
+                version: mod_version,
+                minecraft_versions_json: game_versions_json,
+                java_version: java_version,
+                waystones_version: waystones_version.split('\\+')[0],
+                balm_version: balm_version.split('\\+')[0],
+                rinlib_version: rinlib_version,
+                shogi_dependency_json: source_generation == 'shogi' ? ',\n    "shogi": ">=26.1"' : ''
+            )
+        }
+    }
+}
+processResources.dependsOn generateProfileResources
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+    options.release = java_version as int
+}
+java {
+    withSourcesJar()
+    sourceCompatibility = JavaVersion.toVersion(java_version)
+    targetCompatibility = JavaVersion.toVersion(java_version)
+    toolchain.languageVersion = JavaLanguageVersion.of(Math.max(21, java_version as int))
+}
+tasks.named('sourcesJar').configure { dependsOn generateProfileResources }
+tasks.withType(AbstractArchiveTask).configureEach {
+    preserveFileTimestamps = false
+    reproducibleFileOrder = true
+}
+tasks.named('jar').configure {
+    manifest.attributes(
+        'Implementation-Title': 'Paid Waystones',
+        'Implementation-Version': project.version,
+        'Implementation-Vendor': 'RinChan',
+        'MixinConfigs': 'paid_waystones.mixins.json'
+    )
+    archiveFileName = "paid-waystones-${mod_version}+${minecraft_version}-fabric.jar"
+}

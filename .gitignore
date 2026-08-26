@@ -1,7 +1,8 @@
-.gradle/
-build/
-*/build/
-*/run/
+**/.gradle/
+**/build/
+**/run/
+**/runs/
+out/
 .idea/
 *.iml
 .DS_Store

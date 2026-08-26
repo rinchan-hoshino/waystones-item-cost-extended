@@ -1,0 +1,63 @@
+plugins {
+    id 'fabric-loom' version '1.14.10'
+}
+
+repositories {
+    mavenCentral()
+    maven { url = 'https://maven.fabricmc.net/' }
+    maven { url = 'https://maven.parchmentmc.org' }
+    exclusiveContent {
+        forRepository { maven { url = 'https://api.modrinth.com/maven' } }
+        filter { includeGroup 'maven.modrinth' }
+    }
+}
+
+group = 'dev.rinchan'
+version = "${mod_version}+${minecraft_version}-fabric"
+base.archivesName = 'paid-waystones'
+
+dependencies {
+    minecraft "com.mojang:minecraft:${minecraft_version}"
+    mappings loom.layered {
+        officialMojangMappings()
+        parchment("org.parchmentmc.data:parchment-${minecraft_version}:2025.12.20@zip")
+    }
+    modImplementation "net.fabricmc:fabric-loader:${fabric_loader_version}"
+    modImplementation "net.fabricmc.fabric-api:fabric-api:${fabric_version}"
+    modImplementation "maven.modrinth:balm:${balm_fabric_version}"
+    modImplementation "maven.modrinth:waystones:${waystones_fabric_version}"
+    implementation files("${providers.gradleProperty('rinlibDir').get()}/rinlib-${rinlib_version}+${minecraft_version}-fabric.jar")
+}
+
+sourceSets.main.java {
+    srcDir '../common/src/main/java'
+    srcDir '../versions/requirement/src/main/java'
+}
+
+def generatedResources = layout.buildDirectory.dir('generated/profileResources')
+sourceSets.main.resources.srcDir(generatedResources)
+def profileValues = [
+    version: mod_version,
+    java_version: java_version,
+    minecraft_versions_json: game_versions_json,
+    rinlib_version: rinlib_version,
+    waystones_version: waystones_fabric_version.split('\\+')[0],
+    balm_version: balm_fabric_version.split('\\+')[0],
+    shogi_dependency_json: '',
+    mixin_class: 'ItemRequirementMixin'
+]
+tasks.register('generateProfileResources', Copy) {
+    inputs.properties(profileValues)
+    from('../templates/fabric.mod.json')
+    from('../templates/paid_waystones.mixins.json')
+    into(generatedResources)
+    filteringCharset = 'UTF-8'
+    expand(profileValues)
+}
+tasks.named('processResources').configure { dependsOn tasks.named('generateProfileResources') }
+tasks.withType(Jar).matching { it.name == 'sourcesJar' }.configureEach { dependsOn tasks.named('generateProfileResources') }
+
+tasks.named('jar').configure { manifest { attributes('MixinConfigs': 'paid_waystones.mixins.json') } }
+tasks.withType(JavaCompile).configureEach { options.release = java_version as int; options.encoding = 'UTF-8' }
+tasks.withType(AbstractArchiveTask).configureEach { preserveFileTimestamps = false; reproducibleFileOrder = true }
+java { toolchain.languageVersion = JavaLanguageVersion.of(java_version as int); withSourcesJar() }

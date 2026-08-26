@@ -1,0 +1,41 @@
+plugins {
+    id 'java-library'
+    id 'net.minecraftforge.gradle' version '[7,8)'
+}
+
+rootProject.ext.configurePaidWaystones(project)
+def p = rootProject.ext.profile
+def rinlibDir = providers.gradleProperty('rinlibDir').map { file(it) }.get()
+def rinlibJar = new File(rinlibDir, "rinlib-${rootProject.ext.rinlibVersion}+${p.minecraft}-${p.loader}.jar")
+if (!rinlibJar.exists()) {
+    throw new GradleException("Missing RinLib profile JAR: ${rinlibJar}")
+}
+
+minecraft {
+    mappings channel: 'official', version: p.minecraft
+    runs {
+        register('server') {
+            workingDir.convention layout.projectDirectory.dir('runs/server')
+            args '--nogui', '--mixin.config=paid_waystones.mixins.json'
+        }
+    }
+}
+
+repositories {
+    maven minecraft.mavenizer
+    maven fg.forgeMaven
+    maven fg.minecraftLibsMaven
+}
+
+def forgeCoordinates = "${p.minecraft}-${p.loader_version}"
+def generatedForgeJar = rootProject.file(".gradle/mavenizer/repo/net/minecraftforge/forge/${forgeCoordinates}/forge-${forgeCoordinates}.jar")
+
+dependencies {
+    implementation minecraft.dependency("net.minecraftforge:forge:${forgeCoordinates}")
+    compileOnly files(generatedForgeJar)
+    compileOnly 'org.spongepowered:mixin:0.8.7'
+    implementation "maven.modrinth:balm:${p.balm.version_number}"
+    implementation "maven.modrinth:waystones:${p.waystones.version_number}"
+    implementation files(rinlibJar)
+    annotationProcessor 'org.spongepowered:mixin:0.8.7:processor'
+}

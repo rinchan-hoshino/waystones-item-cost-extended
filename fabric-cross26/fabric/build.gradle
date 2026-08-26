@@ -1,0 +1,58 @@
+plugins {
+    alias libs.plugins.fabricLoom
+    id 'java-library'
+}
+
+base.archivesName = 'paid-waystones'
+
+configurations {
+    commonJava { canBeResolved = true }
+    commonResources { canBeResolved = true }
+}
+dependencies {
+    commonJava project(path: ':common', configuration: 'commonJava')
+    commonResources project(path: ':common', configuration: 'commonResources')
+    minecraft libs.minecraft
+    implementation libs.fabricLoader
+    implementation libs.fabricApi
+    implementation "maven.modrinth:balm:${balm_fabric_version}"
+    implementation "maven.modrinth:waystones:${waystones_fabric_version}"
+    implementation "maven.modrinth:shogi:${shogi_fabric_version}"
+    implementation files("${providers.gradleProperty('rinlibDir').get()}/rinlib-${rinlib_version}+${minecraft_version}-fabric.jar")
+    compileOnly files("../../build/profile-dependencies/shogi-api-${minecraft_version}-fabric.jar")
+}
+
+tasks.named('compileJava', JavaCompile) {
+    dependsOn configurations.commonJava
+    source configurations.commonJava
+}
+processResources {
+    dependsOn configurations.commonResources
+    from configurations.commonResources
+}
+
+def generatedResources = layout.buildDirectory.dir('generated/profileResources')
+sourceSets.main.resources.srcDir(generatedResources)
+def profileValues = [
+    version: mod_version,
+    java_version: java_version,
+    minecraft_versions_json: game_versions_json,
+    rinlib_version: rinlib_version,
+    waystones_version: waystones_fabric_version.split('\\+')[0],
+    balm_version: balm_fabric_version.split('\\+')[0],
+    shogi_dependency_json: ',\n    "shogi": "*"',
+    mixin_class: 'ItemCostMixin'
+]
+tasks.register('generateProfileResources', Copy) {
+    inputs.properties(profileValues)
+    from('../../templates/fabric.mod.json')
+    from('../../templates/paid_waystones.mixins.json')
+    into(generatedResources)
+    filteringCharset = 'UTF-8'
+    expand(profileValues)
+}
+tasks.named('processResources').configure { dependsOn tasks.named('generateProfileResources') }
+tasks.named('jar').configure { manifest { attributes('MixinConfigs': 'paid_waystones.mixins.json') } }
+tasks.withType(JavaCompile).configureEach { options.release = java_version as int; options.encoding = 'UTF-8' }
+tasks.withType(AbstractArchiveTask).configureEach { preserveFileTimestamps = false; reproducibleFileOrder = true }
+java { toolchain.languageVersion = JavaLanguageVersion.of(java_version as int) }

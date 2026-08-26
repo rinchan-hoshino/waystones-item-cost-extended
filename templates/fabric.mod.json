@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "id": "waystone_emeralds",
+  "version": "${version}",
+  "name": "Paid Waystones",
+  "description": "Adds emerald-block payment compatibility to Waystones' native item costs.",
+  "authors": ["RinChan"],
+  "contact": {
+    "homepage": "https://modrinth.com/mod/paid-waystones",
+    "sources": "https://github.com/rinchan-hoshino/waystone-emeralds",
+    "issues": "https://github.com/rinchan-hoshino/waystone-emeralds/issues"
+  },
+  "license": "GPL-3.0-or-later",
+  "environment": "*",
+  "mixins": ["paid_waystones.mixins.json"],
+  "depends": {
+    "fabricloader": ">=0.15.0",
+    "minecraft": ${minecraft_versions_json},
+    "java": ">=${java_version}",
+    "rinlib": ">=${rinlib_version}",
+    "waystones": ">=${waystones_version}",
+    "balm": ">=${balm_version}"${shogi_dependency_json}
+  }
+}

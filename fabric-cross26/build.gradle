@@ -1,0 +1,12 @@
+allprojects {
+    group = 'dev.rinchan'
+    version = "${mod_version}+${minecraft_version}-fabric"
+    repositories {
+        mavenCentral()
+        maven { url = 'https://maven.fabricmc.net/' }
+        exclusiveContent {
+            forRepository { maven { url = 'https://api.modrinth.com/maven' } }
+            filter { includeGroup 'maven.modrinth' }
+        }
+    }
+}

@@ -1,0 +1,29 @@
+plugins {
+    id 'java-library'
+    id 'net.neoforged.gradle.userdev' version '7.0.124'
+}
+
+rootProject.ext.configurePaidWaystones(project)
+def p = rootProject.ext.profile
+def rinlibDir = providers.gradleProperty('rinlibDir').map { file(it) }.get()
+def rinlibJar = new File(rinlibDir, "rinlib-${rootProject.ext.rinlibVersion}+${p.minecraft}-${p.loader}.jar")
+if (!rinlibJar.exists()) {
+    throw new GradleException("Missing RinLib profile JAR: ${rinlibJar}")
+}
+
+dependencies {
+    implementation "net.neoforged:neoforge:${p.loader_version}"
+    implementation "maven.modrinth:balm:${p.balm.version_number}"
+    implementation "maven.modrinth:waystones:${p.waystones.version_number}"
+    implementation files(rinlibJar)
+    annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
+}
+
+runs {
+    configureEach {
+        modSource sourceSets.main
+    }
+    server {
+        programArgument '--nogui'
+    }
+}

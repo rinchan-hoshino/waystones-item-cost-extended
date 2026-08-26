@@ -1,0 +1,40 @@
+plugins {
+    id 'java-library'
+    id 'net.neoforged.moddev' version '2.0.143'
+}
+
+rootProject.ext.configurePaidWaystones(project)
+def p = rootProject.ext.profile
+def rinlibDir = providers.gradleProperty('rinlibDir').map { file(it) }.get()
+def rinlibJar = new File(rinlibDir, "rinlib-${rootProject.ext.rinlibVersion}+${p.minecraft}-${p.loader}.jar")
+if (!rinlibJar.exists()) {
+    throw new GradleException("Missing RinLib profile JAR: ${rinlibJar}")
+}
+
+neoForge {
+    version = p.loader_version
+    mods {
+        waystone_emeralds {
+            sourceSet sourceSets.main
+        }
+    }
+    runs {
+        server {
+            server()
+            programArgument '--nogui'
+        }
+        configureEach {
+            logLevel = org.slf4j.event.Level.INFO
+        }
+    }
+}
+
+dependencies {
+    implementation "maven.modrinth:balm:${p.balm.version_number}"
+    implementation "maven.modrinth:waystones:${p.waystones.version_number}"
+    if (p.generation == 'shogi') {
+        implementation "maven.modrinth:shogi:${p.shogi.version_number}"
+        compileOnly files(rootProject.file("build/profile-dependencies/shogi-api-${p.id}.jar"))
+    }
+    implementation files(rinlibJar)
+}

@@ -1,25 +1,141 @@
-plugins {
-    id 'net.neoforged.moddev' version '2.0.91' apply false
-}
+ext.profile = gradle.ext.paidWaystonesProfile
+ext.rinlibVersion = new groovy.json.JsonSlurper().parse(file('support/profiles.json')).rinlib_version
+ext.releaseVersion = new groovy.json.JsonSlurper().parse(file('support/profiles.json')).paid_waystones_version
 
-subprojects {
-    group = rootProject.mod_group_id
-    version = rootProject.mod_version
-
+allprojects {
     repositories {
         mavenLocal()
         mavenCentral()
+        maven { url = 'https://maven.fabricmc.net' }
         maven { url = 'https://maven.neoforged.net/releases' }
-        exclusiveContent {
-            forRepository { maven { url = 'https://api.modrinth.com/maven' } }
-            filter { includeGroup 'maven.modrinth' }
-        }
+        maven { url = 'https://maven.minecraftforge.net' }
+        maven { url = 'https://repo.spongepowered.org/repository/maven-public/' }
+        maven { url = 'https://api.modrinth.com/maven' }
+    }
+}
+
+ext.configurePaidWaystones = { Project target ->
+    target.group = 'dev.rinchan'
+    target.version = "${releaseVersion}+${profile.minecraft}-${profile.loader}"
+
+    target.base {
+        archivesName = 'paid-waystones'
+    }
+    target.java {
+        toolchain.languageVersion = JavaLanguageVersion.of(Math.max(21, profile.java as int))
+    }
+    target.tasks.withType(JavaCompile).configureEach {
+        options.encoding = 'UTF-8'
+        options.release = profile.java as int
+    }
+    target.tasks.withType(AbstractArchiveTask).configureEach {
+        preserveFileTimestamps = false
+        reproducibleFileOrder = true
     }
 
-    plugins.withType(JavaPlugin).configureEach {
-        java.toolchain.languageVersion = JavaLanguageVersion.of(rootProject.java_version as int)
-        tasks.withType(JavaCompile).configureEach {
-            options.encoding = 'UTF-8'
+    target.sourceSets.main.java {
+        srcDir rootProject.file('common/src/main/java')
+        srcDir rootProject.file("versions/${profile.generation}/src/main/java")
+    }
+    target.sourceSets.main.resources {
+        srcDir rootProject.file('common/src/main/resources')
+        srcDir target.layout.buildDirectory.dir('generated/profileResources')
+    }
+
+    def generateProfileResources = target.tasks.register('generateProfileResources') {
+        def outputDir = target.layout.buildDirectory.dir('generated/profileResources')
+        outputs.dir outputDir
+        inputs.property 'profileId', profile.id
+        inputs.file rootProject.file('support/profiles.json')
+        inputs.files rootProject.fileTree('templates')
+        doLast {
+            def out = outputDir.get().asFile
+            delete out
+            out.mkdirs()
+            copy {
+                from rootProject.file('templates/paid_waystones.mixins.json')
+                into out
+                expand(mixin_class: profile.generation == 'shogi' ? 'ItemCostMixin' : 'ItemRequirementMixin')
+            }
+            if (profile.loader == 'fabric') {
+                copy {
+                    from rootProject.file('templates/fabric.mod.json')
+                    into out
+                    expand(profileValues(profile))
+                }
+            } else {
+                def metadataName = profile.loader == 'neoforge' && profile.minecraft != '1.20.4'
+                    ? 'neoforge.mods.toml'
+                    : 'mods.toml'
+                copy {
+                    from rootProject.file("templates/${profile.loader}.mods.toml")
+                    into new File(out, 'META-INF')
+                    rename { metadataName }
+                    expand(profileValues(profile))
+                }
+            }
         }
     }
+    target.tasks.named('processResources').configure { dependsOn generateProfileResources }
+    target.tasks.named('jar').configure {
+        manifest.attributes(
+            'Implementation-Title': 'Paid Waystones',
+            'Implementation-Version': target.version,
+            'Implementation-Vendor': 'RinChan',
+            'MixinConfigs': 'paid_waystones.mixins.json'
+        )
+        archiveFileName = "paid-waystones-${releaseVersion}+${profile.minecraft}-${profile.loader}.jar"
+    }
+}
+
+ext.profileValues = { Map selected ->
+    def waystonesBase = selected.waystones.version_number.split('\\+')[0]
+    def balmBase = selected.balm.version_number.split('\\+')[0]
+    def values = [
+        version: releaseVersion,
+        minecraft_versions_json: groovy.json.JsonOutput.toJson(selected.game_versions),
+        minecraft_range: minecraftRange(selected.game_versions as List<String>),
+        java_version: selected.java,
+        waystones_version: waystonesBase,
+        balm_version: balmBase,
+        rinlib_version: rinlibVersion,
+        shogi_dependency_json: selected.generation == 'shogi' ? ',\n    "shogi": ">=26.1"' : '',
+        shogi_dependency_toml: selected.generation == 'shogi' ? """
+[[dependencies.waystone_emeralds]]
+modId="shogi"
+${selected.loader == 'forge' ? 'mandatory=true' : 'type="required"'}
+versionRange="[26.1,)"
+ordering="AFTER"
+side="BOTH"
+""" : '',
+        loader_dependency_toml: selected.loader == 'neoforge' ? """
+[[dependencies.waystone_emeralds]]
+modId="neoforge"
+type="required"
+versionRange="[${selected.loader_version.split('\\.')[0]},)"
+ordering="NONE"
+side="BOTH"
+""" : '',
+        dependency_kind: selected.loader == 'forge' ? 'mandatory=true' : 'type="required"'
+    ]
+    values
+}
+
+ext.minecraftRange = { List<String> versions ->
+    def parsed = versions.collect { it.tokenize('.').collect { part -> part as int } }
+    parsed.sort { left, right ->
+        def size = Math.max(left.size(), right.size())
+        for (int index = 0; index < size; index++) {
+            def leftPart = index < left.size() ? left[index] : 0
+            def rightPart = index < right.size() ? right[index] : 0
+            if (leftPart != rightPart) {
+                return leftPart <=> rightPart
+            }
+        }
+        return 0
+    }
+    def low = parsed.first()
+    def high = new ArrayList<Integer>(parsed.last())
+    high[high.size() - 1] = high.last() + 1
+    "[${low.join('.')},${high.join('.')})"
 }

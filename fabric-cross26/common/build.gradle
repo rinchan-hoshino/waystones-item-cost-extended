@@ -1,0 +1,30 @@
+plugins {
+    alias libs.plugins.modDevGradle
+    id 'java-library'
+}
+
+neoForge { neoFormVersion = libs.versions.neoForm }
+
+sourceSets.main.java {
+    srcDir '../../common/src/main/java'
+    srcDir '../../versions/shogi/src/main/java'
+}
+
+dependencies {
+    implementation "maven.modrinth:waystones:${waystones_neoforge_version}"
+    implementation "maven.modrinth:shogi:26.1.2.8+neoforge-26.1.2"
+    implementation files("../../build/profile-dependencies/shogi-api-${minecraft_version}-fabric.jar")
+    implementation files("${providers.gradleProperty('rinlibDir').get()}/rinlib-${rinlib_version}+${minecraft_version}-fabric.jar")
+}
+
+configurations {
+    commonJava { canBeConsumed = true }
+    commonResources { canBeConsumed = true }
+}
+artifacts {
+    sourceSets.main.java.srcDirs.each { commonJava it }
+    commonResources sourceSets.main.resources.sourceDirectories.singleFile
+}
+
+tasks.withType(JavaCompile).configureEach { options.release = java_version as int; options.encoding = 'UTF-8' }
+java { toolchain.languageVersion = JavaLanguageVersion.of(java_version as int) }

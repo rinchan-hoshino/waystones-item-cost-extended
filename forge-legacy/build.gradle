@@ -1,0 +1,42 @@
+plugins {
+    id 'java-library'
+    id 'net.minecraftforge.gradle' version '[6.0.25,6.2)'
+    id 'org.spongepowered.mixin' version '0.7-SNAPSHOT'
+}
+
+rootProject.ext.configurePaidWaystones(project)
+def p = rootProject.ext.profile
+def rinlibDir = providers.gradleProperty('rinlibDir').map { file(it) }.get()
+def rinlibJar = new File(rinlibDir, "rinlib-${rootProject.ext.rinlibVersion}+${p.minecraft}-${p.loader}.jar")
+if (!rinlibJar.exists()) {
+    throw new GradleException("Missing RinLib profile JAR: ${rinlibJar}")
+}
+
+mixin {
+    add sourceSets.main, 'paid_waystones.refmap.json'
+    config 'paid_waystones.mixins.json'
+}
+
+minecraft {
+    mappings channel: 'official', version: p.minecraft
+    reobf = false
+    runs {
+        server {
+            workingDirectory file('runs/server')
+            args '--nogui', '--mixin.config=paid_waystones.mixins.json'
+            mods {
+                waystone_emeralds {
+                    source sourceSets.main
+                }
+            }
+        }
+    }
+}
+
+dependencies {
+    minecraft "net.minecraftforge:forge:${p.minecraft}-${p.loader_version}"
+    implementation fg.deobf("maven.modrinth:balm:${p.balm.version_number}")
+    implementation fg.deobf("maven.modrinth:waystones:${p.waystones.version_number}")
+    implementation files(rinlibJar)
+    annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
+}

@@ -1,9 +1,36 @@
+import groovy.json.JsonSlurper
+
 pluginManagement {
     repositories {
         gradlePluginPortal()
+        mavenCentral()
+        maven { url = 'https://maven.fabricmc.net' }
         maven { url = 'https://maven.neoforged.net/releases' }
+        maven { url = 'https://maven.minecraftforge.net' }
+        maven { url = 'https://repo.spongepowered.org/repository/maven-public' }
     }
 }
 
-rootProject.name = 'waystone-emeralds'
-include 'neoforge'
+plugins {
+    id 'org.gradle.toolchains.foojay-resolver-convention' version '1.0.0'
+}
+
+rootProject.name = 'paid-waystones'
+
+def profileId = providers.gradleProperty('profile').getOrElse('1.21.1-neoforge')
+def matrix = new JsonSlurper().parse(file('support/profiles.json'))
+def profile = matrix.profiles.find { it.id == profileId }
+if (profile == null) {
+    throw new GradleException("Unknown Paid Waystones profile: ${profileId}")
+}
+gradle.ext.paidWaystonesProfile = profile
+
+def module
+if (profile.loader == 'fabric') {
+    module = 'fabric'
+} else if (profile.loader == 'forge') {
+    module = profile.minecraft in ['1.20.4', '1.20.6', '1.21'] ? 'forge-legacy' : 'forge-modern'
+} else {
+    module = profile.minecraft in ['1.20.4', '1.20.6'] ? 'neoforge-legacy' : 'neoforge-modern'
+}
+include(module)
