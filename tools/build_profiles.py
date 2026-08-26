@@ -36,7 +36,7 @@ def module_for(profile):
 
 def run_profile(profile, rinlib_dir):
     profile_id = profile["id"]
-    expected = f"paid-waystones-1.0.0+{profile['minecraft']}-{profile['loader']}.jar"
+    expected = f"paid-waystones-1.0.1+{profile['minecraft']}-{profile['loader']}.jar"
     destination = DIST / expected
     if destination.exists():
         print(f"{profile_id}\t{destination}\t(existing)")
@@ -61,7 +61,7 @@ def run_profile(profile, rinlib_dir):
 
     if module == "fabric" and profile["minecraft"] == "26.1.2":
         command = [
-            str(GRADLE_9_2), "--no-daemon", "-p", "fabric-cross26", ":fabric:build",
+            str(GRADLE_9_2), "--no-daemon", "--no-configuration-cache", "-p", "fabric-cross26", ":fabric:build",
             f"-PrinlibDir={rinlib_dir}",
         ]
         output_dir = ROOT / "fabric-cross26" / "fabric" / "build" / "libs"
@@ -69,7 +69,7 @@ def run_profile(profile, rinlib_dir):
         profiles = json.loads(PROFILES_FILE.read_text())["profiles"]
         neo = next(x for x in profiles if x["minecraft"] == "1.21.11" and x["loader"] == "neoforge")
         command = [
-            str(GRADLE_9_2), "--no-daemon", "-p", "fabric-cross", "build",
+            str(GRADLE_9_2), "--no-daemon", "--no-configuration-cache", "-p", "fabric-cross", "build",
             "-Pminecraft_version=1.21.11",
             "-Pneo_form_version=1.21.11-20251209.172050",
             f"-Pfabric_loader_version={profile['loader_version']}",
@@ -83,10 +83,14 @@ def run_profile(profile, rinlib_dir):
         ]
         output_dir = ROOT / "fabric-cross" / "build" / "libs"
     elif module == "fabric":
-        fabric_gradle = GRADLE_9_5 if profile["minecraft"].startswith("26.") else GRADLE_9_2
-        loom_version = "1.17-SNAPSHOT" if profile["minecraft"].startswith("26.") else "1.14.10"
+        if profile["minecraft"].startswith("26."):
+            fabric_gradle, loom_version = GRADLE_9_5, "1.17-SNAPSHOT"
+        elif tuple(map(int, profile["minecraft"].split("."))) >= (1, 21, 1):
+            fabric_gradle, loom_version = GRADLE_9_2, "1.14.10"
+        else:
+            fabric_gradle, loom_version = GRADLE_8, "1.11.8"
         command = [
-            str(fabric_gradle), "--no-daemon", "-p", "fabric", "clean", "build",
+            str(fabric_gradle), "--no-daemon", "--no-configuration-cache", "-p", "fabric", "clean", "build",
             f"-Ploom_version={loom_version}",
             f"-Pminecraft_version={profile['minecraft']}",
             f"-Ploader_version={profile['loader_version']}",
@@ -103,7 +107,7 @@ def run_profile(profile, rinlib_dir):
         output_dir = ROOT / "fabric" / "build" / "libs"
     else:
         gradle = GRADLE_9_5 if module == "forge-modern" else GRADLE_8
-        command = [str(gradle), "--no-daemon", f"-Pprofile={profile_id}", f"-PrinlibDir={rinlib_dir}", f":{module}:clean", f":{module}:build"]
+        command = [str(gradle), "--no-daemon", "--no-configuration-cache", f"-Pprofile={profile_id}", f"-PrinlibDir={rinlib_dir}", f":{module}:clean", f":{module}:build"]
         output_dir = ROOT / module / "build" / "libs"
 
     LOGS.mkdir(parents=True, exist_ok=True)

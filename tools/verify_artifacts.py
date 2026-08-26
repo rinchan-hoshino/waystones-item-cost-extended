@@ -61,6 +61,8 @@ def main():
                 metadata = json.loads(jar.read('fabric.mod.json'))
                 if metadata['depends']['minecraft'] != profile['game_versions']:
                     errors.append(f'{profile_id}: wrong Fabric game versions')
+                if metadata['depends'].get('rinlib') != f">={matrix['rinlib_version']}":
+                    errors.append(f'{profile_id}: wrong Fabric RinLib dependency')
             else:
                 metadata_path = 'META-INF/mods.toml' if profile['loader'] == 'forge' or profile['minecraft'] == '1.20.4' else 'META-INF/neoforge.mods.toml'
                 metadata = jar.read(metadata_path).decode()
@@ -68,6 +70,10 @@ def main():
                 expected_range = minecraft_range(profile['game_versions'])
                 if ranges != [expected_range]:
                     errors.append(f'{profile_id}: Minecraft range {ranges}, expected {expected_range}')
+                rinlib_ranges = re.findall(r'modId="rinlib"[\s\S]*?versionRange="([^"]+)"', metadata)
+                expected_rinlib_range = f"[{matrix['rinlib_version']},)"
+                if rinlib_ranges != [expected_rinlib_range]:
+                    errors.append(f'{profile_id}: RinLib range {rinlib_ranges}, expected {expected_rinlib_range}')
         with zipfile.ZipFile(rinlib) as jar:
             if 'dev/rinchan/rinlib/payment/DenominatedPayment.class' not in jar.namelist():
                 errors.append(f'{profile_id}: RinLib payment planner missing')

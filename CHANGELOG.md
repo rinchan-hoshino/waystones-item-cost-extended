@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.1
+
+- Migrates the shared payment contract to formal RinLib 1.0.0.
+- Does not change prices, payment planning, change, creative-mode behavior or Waystones integration.
+
 ## 1.0.0
 
 - Added all official Waystones native-item-cost targets from Minecraft 1.20.4 through 26.2.

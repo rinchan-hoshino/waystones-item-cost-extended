@@ -16,7 +16,7 @@ Paid Waystones adds no currency account, pricing configuration, command, block o
 
 ## Supported versions
 
-Version 1.0.0 follows every current official Waystones loader target that has native item-cost rules:
+Version 1.0.1 follows every current official Waystones loader target that has native item-cost rules:
 
 - Minecraft 1.20.4 and 1.20.6
 - Minecraft 1.21 through 1.21.11
@@ -29,7 +29,7 @@ The exact machine-readable matrix and upstream Waystones version IDs are in [`su
 
 - Waystones
 - Balm
-- RinLib 0.4.0
+- RinLib 1.0.0
 - Shogi on Minecraft 26.x
 
 Both client and server should install the mod.
