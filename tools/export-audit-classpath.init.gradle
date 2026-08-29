@@ -14,7 +14,11 @@ gradle.beforeProject { candidate ->
                 def classpath = candidate.configurations.getByName('compileClasspath').files.collect { it.canonicalFile }.sort { it.path }
                 def productionClasspath = new LinkedHashSet(classpath)
                 def loom = candidate.extensions.findByName('loom')
-                if (loom != null && loom.productionNamespace.get() == 'intermediary') {
+                def profileProperty = gradle.startParameter.projectProperties['profile']
+                def minecraftVersion = gradle.startParameter.projectProperties['minecraft_version'] ?:
+                    (profileProperty == null ? null : profileProperty.split('-')[0])
+                def intermediaryProduction = loom != null && minecraftVersion != null && !minecraftVersion.startsWith('26.')
+                if (intermediaryProduction) {
                     productionClasspath.removeIf {
                         it.path.contains('/loom-cache/minecraftMaven/net/minecraft/') ||
                             it.path.contains('/loom-cache/remapped_mods/remapped/unspecified/')
