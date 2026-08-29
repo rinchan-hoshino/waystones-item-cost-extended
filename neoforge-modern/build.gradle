@@ -29,11 +29,13 @@ neoForge {
     }
 }
 
+def profileDependenciesDir = providers.gradleProperty('profileDependenciesDir').map { file(it) }.get()
+
 dependencies {
-    implementation "maven.modrinth:balm:${p.balm.version_number}"
-    implementation "maven.modrinth:waystones:${p.waystones.version_number}"
+    implementation files(new File(profileDependenciesDir, "balm-${p.id}.jar"))
+    implementation files(new File(profileDependenciesDir, "waystones-${p.id}.jar"))
     if (p.generation == 'shogi') {
-        implementation "maven.modrinth:shogi:${p.shogi.version_number}"
+        implementation files(new File(profileDependenciesDir, "shogi-${p.id}.jar"))
         compileOnly files(rootProject.file("build/profile-dependencies/shogi-api-${p.id}.jar"))
     }
     implementation files(rinlibJar)

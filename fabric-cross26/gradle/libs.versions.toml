@@ -10,5 +10,5 @@ fabricLoader = { module = "net.fabricmc:fabric-loader", version.ref = "fabricLoa
 fabricApi = { module = "net.fabricmc.fabric-api:fabric-api", version.ref = "fabricApi" }
 
 [plugins]
-fabricLoom = { id = "net.fabricmc.fabric-loom", version = "1.14-SNAPSHOT" }
+fabricLoom = { id = "net.fabricmc.fabric-loom", version = "1.14.10" }
 modDevGradle = { id = "net.neoforged.moddev", version = "2.0.143" }

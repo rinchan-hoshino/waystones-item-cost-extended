@@ -36,10 +36,16 @@ def main() -> None:
     output = ROOT / 'build' / 'profile-dependencies'
     cache = output / 'downloads'
     for profile in profiles:
+        for dependency_name in ('waystones', 'balm'):
+            dependency = profile[dependency_name]
+            target = output / f"{dependency_name}-{profile['id']}.jar"
+            download(dependency['url'], target, dependency['sha512'])
+            print(target)
+
         if profile['generation'] != 'shogi':
             continue
         shogi = profile['shogi']
-        platform_jar = cache / f"shogi-{profile['id']}.jar"
+        platform_jar = output / f"shogi-{profile['id']}.jar"
         download(shogi['url'], platform_jar, shogi['sha512'])
         with zipfile.ZipFile(platform_jar) as archive:
             nested = [name for name in archive.namelist() if name.startswith('META-INF/') and 'shogi-api-' in name and name.endswith('.jar')]

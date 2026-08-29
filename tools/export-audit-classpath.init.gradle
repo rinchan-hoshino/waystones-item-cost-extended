@@ -1,0 +1,44 @@
+gradle.beforeProject { candidate ->
+    candidate.afterEvaluate {
+        def selectedPath = gradle.startParameter.projectProperties['auditProjectPath']
+        if (candidate.path != selectedPath) {
+            return
+        }
+        candidate.tasks.register('writeAuditClasspath') {
+            doLast {
+                def compileOutput = gradle.startParameter.projectProperties['auditClasspathOutput']
+                def productionOutput = gradle.startParameter.projectProperties['auditProductionClasspathOutput']
+                if (compileOutput == null || productionOutput == null) {
+                    throw new GradleException('Missing audit classpath output properties')
+                }
+                def classpath = candidate.configurations.getByName('compileClasspath').files.collect { it.canonicalFile }.sort { it.path }
+                def productionClasspath = new LinkedHashSet(classpath)
+                def loom = candidate.extensions.findByName('loom')
+                if (loom != null && loom.productionNamespace.get() == 'intermediary') {
+                    productionClasspath.removeIf {
+                        it.path.contains('/loom-cache/minecraftMaven/net/minecraft/') ||
+                            it.path.contains('/loom-cache/remapped_mods/remapped/unspecified/')
+                    }
+                    def namespaceClass = loom.class.classLoader.loadClass('net.fabricmc.loom.api.mappings.layered.MappingsNamespace')
+                    def intermediary = Enum.valueOf(namespaceClass, 'INTERMEDIARY')
+                    productionClasspath.addAll(loom.getMinecraftJarsCollection(intermediary).files.collect { it.canonicalFile })
+                    def dependenciesDir = new File(gradle.startParameter.projectProperties['profileDependenciesDir'])
+                    def profileId = gradle.startParameter.projectProperties['profile'] ?:
+                        "${gradle.startParameter.projectProperties['minecraft_version']}-fabric"
+                    ['balm', 'waystones', 'shogi'].each { name ->
+                        def dependency = new File(dependenciesDir, "${name}-${profileId}.jar")
+                        if (dependency.isFile()) {
+                            productionClasspath.add(dependency.canonicalFile)
+                        }
+                    }
+                }
+                def compileFile = new File(compileOutput)
+                compileFile.parentFile.mkdirs()
+                compileFile.text = classpath.collect { it.path }.join(System.lineSeparator()) + System.lineSeparator()
+                def productionFile = new File(productionOutput)
+                productionFile.parentFile.mkdirs()
+                productionFile.text = productionClasspath.sort { it.path }.collect { it.path }.join(System.lineSeparator()) + System.lineSeparator()
+            }
+        }
+    }
+}

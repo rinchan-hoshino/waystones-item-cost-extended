@@ -1,6 +1,7 @@
 package dev.rinchan.waystoneemeralds.mixin;
 
 import com.mojang.datafixers.util.Either;
+import dev.rinchan.waystoneemeralds.payment.EmeraldCostAccumulator;
 import dev.rinchan.waystoneemeralds.payment.EmeraldInventory;
 import net.blay09.mods.shogi.coercion.Coercion;
 import net.blay09.mods.shogi.common.effect.cost.ItemCost;
@@ -59,23 +60,19 @@ public abstract class ItemCostMixin {
     @Unique
     private static final class EmeraldCostAggregate {
         private final Player player;
-        private int availableUnits;
-        private int consumedUnits;
+        private final EmeraldCostAccumulator accumulator;
 
         private EmeraldCostAggregate(Player player) {
             this.player = player;
-            availableUnits = EmeraldInventory.availableUnits(player);
+            accumulator = new EmeraldCostAccumulator(EmeraldInventory.availableUnits(player));
         }
 
         private int simulateConsume(int requestedUnits) {
-            int consumed = Math.min(availableUnits, requestedUnits);
-            availableUnits -= consumed;
-            consumedUnits += consumed;
-            return consumed;
+            return accumulator.simulateConsume(requestedUnits);
         }
 
         private void consume() {
-            EmeraldInventory.consume(player, consumedUnits);
+            EmeraldInventory.consume(player, accumulator.consumedUnits());
         }
     }
 }

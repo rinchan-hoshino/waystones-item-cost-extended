@@ -1,6 +1,7 @@
 package dev.rinchan.waystoneemeralds.mixin;
 
 import dev.rinchan.waystoneemeralds.payment.EmeraldInventory;
+import dev.rinchan.waystoneemeralds.payment.LegacyPaymentState;
 import net.blay09.mods.waystones.requirement.ItemRequirement;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Items;
@@ -14,7 +15,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 @Mixin(ItemRequirement.class)
 public abstract class ItemRequirementMixin {
     @Unique
-    private int paidWaystones$consumedUnits;
+    private final LegacyPaymentState paidWaystones$paymentState = new LegacyPaymentState();
 
     @Inject(method = "canAfford", at = @At("HEAD"), cancellable = true, remap = false)
     private void paidWaystones$acceptEmeraldBlocks(Player player, CallbackInfoReturnable<Boolean> cir) {
@@ -29,9 +30,11 @@ public abstract class ItemRequirementMixin {
         var requirement = (ItemRequirement) (Object) this;
         if (requirement.getItemStack().is(Items.EMERALD)) {
             int requiredUnits = requirement.getCount();
-            paidWaystones$consumedUnits = EmeraldInventory.consume(player, requiredUnits) && !player.getAbilities().instabuild
-                ? requiredUnits
-                : 0;
+            paidWaystones$paymentState.recordCharge(
+                EmeraldInventory.consume(player, requiredUnits),
+                player.getAbilities().instabuild,
+                requiredUnits
+            );
             ci.cancel();
         }
     }
@@ -40,8 +43,7 @@ public abstract class ItemRequirementMixin {
     private void paidWaystones$refundEmeraldValue(Player player, CallbackInfo ci) {
         var requirement = (ItemRequirement) (Object) this;
         if (requirement.getItemStack().is(Items.EMERALD)) {
-            EmeraldInventory.refund(player, paidWaystones$consumedUnits);
-            paidWaystones$consumedUnits = 0;
+            EmeraldInventory.refund(player, paidWaystones$paymentState.takeRefundUnits());
             ci.cancel();
         }
     }

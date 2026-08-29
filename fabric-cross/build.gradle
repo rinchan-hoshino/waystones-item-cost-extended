@@ -16,6 +16,9 @@ group = 'dev.rinchan'
 version = "${mod_version}+${minecraft_version}-fabric"
 base.archivesName = 'paid-waystones'
 
+def profileId = providers.gradleProperty('profileId').get()
+def profileDependenciesDir = providers.gradleProperty('profileDependenciesDir').get()
+
 dependencies {
     minecraft "com.mojang:minecraft:${minecraft_version}"
     mappings loom.layered {
@@ -24,8 +27,8 @@ dependencies {
     }
     modImplementation "net.fabricmc:fabric-loader:${fabric_loader_version}"
     modImplementation "net.fabricmc.fabric-api:fabric-api:${fabric_version}"
-    modImplementation "maven.modrinth:balm:${balm_fabric_version}"
-    modImplementation "maven.modrinth:waystones:${waystones_fabric_version}"
+    modImplementation files("${profileDependenciesDir}/balm-${profileId}.jar")
+    modImplementation files("${profileDependenciesDir}/waystones-${profileId}.jar")
     implementation files("${providers.gradleProperty('rinlibDir').get()}/rinlib-${rinlib_version}+${minecraft_version}-fabric.jar")
 }
 

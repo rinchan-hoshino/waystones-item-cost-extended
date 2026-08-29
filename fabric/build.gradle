@@ -7,6 +7,10 @@ def repositoryRoot = file('..')
 def profileId = "${minecraft_version}-fabric"
 def rinlibDir = providers.gradleProperty('rinlibDir').orNull
 def rinlibJar = rinlibDir == null ? null : file("${rinlibDir}/rinlib-${rinlib_version}+${minecraft_version}-fabric.jar")
+def profileDependenciesDir = providers.gradleProperty('profileDependenciesDir').orNull
+def lockedDependency = { String name ->
+    profileDependenciesDir == null ? null : file("${profileDependenciesDir}/${name}-${profileId}.jar")
+}
 def hasNoMojangMappings = minecraft_version == '26.2'
 def dependencyConfiguration = hasNoMojangMappings ? 'implementation' : 'modImplementation'
 
@@ -45,10 +49,19 @@ dependencies {
         compileOnly "net.fabricmc:sponge-mixin:0.17.3+mixin.0.8.7"
     }
     add(dependencyConfiguration, "net.fabricmc.fabric-api:fabric-api:${fabric_api_version}")
-    add(dependencyConfiguration, "maven.modrinth:balm:${balm_version}")
-    add(dependencyConfiguration, "maven.modrinth:waystones:${waystones_version}")
+    if (profileDependenciesDir == null) {
+        add(dependencyConfiguration, "maven.modrinth:balm:${balm_version}")
+        add(dependencyConfiguration, "maven.modrinth:waystones:${waystones_version}")
+    } else {
+        add(dependencyConfiguration, files(lockedDependency('balm')))
+        add(dependencyConfiguration, files(lockedDependency('waystones')))
+    }
     if (source_generation == 'shogi') {
-        add(dependencyConfiguration, "maven.modrinth:shogi:${shogi_version}")
+        if (profileDependenciesDir == null) {
+            add(dependencyConfiguration, "maven.modrinth:shogi:${shogi_version}")
+        } else {
+            add(dependencyConfiguration, files(lockedDependency('shogi')))
+        }
         compileOnly files(new File(repositoryRoot, "build/profile-dependencies/shogi-api-${profileId}.jar"))
     }
     if (rinlibJar != null) {

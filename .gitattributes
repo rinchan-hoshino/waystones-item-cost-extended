@@ -1,0 +1,3 @@
+tools/locked-maven/**/*.pom -text -diff
+tools/locked-maven/**/*.module -text -diff
+tools/locked-maven/**/*.jar binary

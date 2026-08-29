@@ -5,6 +5,9 @@ plugins {
 
 base.archivesName = 'paid-waystones'
 
+def profileId = providers.gradleProperty('profileId').get()
+def profileDependenciesDir = providers.gradleProperty('profileDependenciesDir').get()
+
 configurations {
     commonJava { canBeResolved = true }
     commonResources { canBeResolved = true }
@@ -15,9 +18,9 @@ dependencies {
     minecraft libs.minecraft
     implementation libs.fabricLoader
     implementation libs.fabricApi
-    implementation "maven.modrinth:balm:${balm_fabric_version}"
-    implementation "maven.modrinth:waystones:${waystones_fabric_version}"
-    implementation "maven.modrinth:shogi:${shogi_fabric_version}"
+    implementation files("${profileDependenciesDir}/balm-${profileId}.jar")
+    implementation files("${profileDependenciesDir}/waystones-${profileId}.jar")
+    implementation files("${profileDependenciesDir}/shogi-${profileId}.jar")
     implementation files("${providers.gradleProperty('rinlibDir').get()}/rinlib-${rinlib_version}+${minecraft_version}-fabric.jar")
     compileOnly files("../../build/profile-dependencies/shogi-api-${minecraft_version}-fabric.jar")
 }
@@ -40,7 +43,7 @@ def profileValues = [
     rinlib_version: rinlib_version,
     waystones_version: waystones_fabric_version.split('\\+')[0],
     balm_version: balm_fabric_version.split('\\+')[0],
-    shogi_dependency_json: ',\n    "shogi": "*"',
+    shogi_dependency_json: ',\n    "shogi": ">=26.1"',
     mixin_class: 'ItemCostMixin'
 ]
 tasks.register('generateProfileResources', Copy) {

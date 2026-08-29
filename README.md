@@ -16,7 +16,7 @@ Paid Waystones adds no currency account, pricing configuration, command, block o
 
 ## Supported versions
 
-Version 1.0.1 follows every current official Waystones loader target that has native item-cost rules:
+Version 1.0.2 follows every current official Waystones loader target that has native item-cost rules:
 
 - Minecraft 1.20.4 and 1.20.6
 - Minecraft 1.21 through 1.21.11

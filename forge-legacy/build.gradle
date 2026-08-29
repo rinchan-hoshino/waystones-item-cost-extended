@@ -1,6 +1,6 @@
 plugins {
     id 'java-library'
-    id 'net.minecraftforge.gradle' version '[6.0.25,6.2)'
+    id 'net.minecraftforge.gradle' version '6.0.54'
     id 'org.spongepowered.mixin' version '0.7-SNAPSHOT'
 }
 
@@ -33,10 +33,12 @@ minecraft {
     }
 }
 
+def profileDependenciesDir = providers.gradleProperty('profileDependenciesDir').map { file(it) }.get()
+
 dependencies {
     minecraft "net.minecraftforge:forge:${p.minecraft}-${p.loader_version}"
-    implementation fg.deobf("maven.modrinth:balm:${p.balm.version_number}")
-    implementation fg.deobf("maven.modrinth:waystones:${p.waystones.version_number}")
+    implementation fg.deobf(files(new File(profileDependenciesDir, "balm-${p.id}.jar")))
+    implementation fg.deobf(files(new File(profileDependenciesDir, "waystones-${p.id}.jar")))
     implementation files(rinlibJar)
     annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
 }

@@ -1,0 +1,26 @@
+{
+  "schema": 1,
+  "source": "https://repo.spongepowered.org/repository/maven-public",
+  "files": [
+    {
+      "path": "org/spongepowered/mixin/org.spongepowered.mixin.gradle.plugin/0.7-SNAPSHOT/org.spongepowered.mixin.gradle.plugin-0.7-SNAPSHOT.pom",
+      "size": 793,
+      "sha512": "1a9c585295b07e34c17f7b94f4f53da699b20d08c9d9f641b3776f55c1eda7b28d9cb41c0fd5b2d85b489cdba7d2df7fe6054815beb933d98b4153c95fce745e"
+    },
+    {
+      "path": "org/spongepowered/mixingradle/0.7-SNAPSHOT/mixingradle-0.7-SNAPSHOT.jar",
+      "size": 140713,
+      "sha512": "d967dba2d9f0a814d3afd9de35271fb852c74ebace0bc6f22a809fb4d9c3efdfe6b7abf08003a40ca354b4e3d0b9cbbe1ceb758b7213e50f49f09fd74b534556"
+    },
+    {
+      "path": "org/spongepowered/mixingradle/0.7-SNAPSHOT/mixingradle-0.7-SNAPSHOT.module",
+      "size": 2468,
+      "sha512": "c0f7c84ff5701fa27b9ee739694023d9b22e7b412a176afdcfa7dc7ba8f6bdb1daa26d80c785dee41259936fb4654b30542ea74a30c13facb08959a72a923a1a"
+    },
+    {
+      "path": "org/spongepowered/mixingradle/0.7-SNAPSHOT/mixingradle-0.7-SNAPSHOT.pom",
+      "size": 2068,
+      "sha512": "e81068ba7396bdd1f8de93cf24a0efd0ce6640d0de5d7cfe5e7ae8f9e9968242a17210a39e8aed8f1060ea7ec26c3f63c037f5378513edca636353c136f77fe1"
+    }
+  ]
+}
