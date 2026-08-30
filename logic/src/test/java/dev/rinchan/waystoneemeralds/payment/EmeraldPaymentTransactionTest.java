@@ -67,6 +67,47 @@ class EmeraldPaymentTransactionTest {
     }
 
     @Test
+    void exhaustiveSmallInventoriesEitherConserveTheExactChargeOrRemainUntouched() {
+        for (int blockCount = 0; blockCount <= 3; blockCount++) {
+            for (int emeraldCount = 0; emeraldCount <= 12; emeraldCount++) {
+                int available = blockCount * 9 + emeraldCount;
+                for (int required = 0; required <= available + 1; required++) {
+                    var inventory = inventory(false, slot(blockCount, 9), slot(emeraldCount, 1));
+                    int requested = required;
+                    EmeraldPaymentTransaction.Planner planner = requested <= available
+                        ? plan(
+                            List.of(new Removal(0, blockCount), new Removal(1, emeraldCount)).stream()
+                                .filter(removal -> removal.count() > 0)
+                                .toList(),
+                            available - requested
+                        )
+                        : noPlan();
+
+                    assertEquals(
+                        requested <= available,
+                        EmeraldPaymentTransaction.consume(inventory, requested, planner),
+                        "blocks=" + blockCount + ", emeralds=" + emeraldCount + ", required=" + requested
+                    );
+                    assertEquals(
+                        requested <= available ? requested : 0,
+                        inventory.initialValue() - inventory.currentValue(),
+                        "blocks=" + blockCount + ", emeralds=" + emeraldCount + ", required=" + requested
+                    );
+                }
+            }
+        }
+    }
+
+    @Test
+    void faultyEightUnitBlockPlannerIsRejectedWithoutMutation() {
+        var inventory = inventory(false, slot(1, 9));
+
+        assertFalse(EmeraldPaymentTransaction.consume(inventory, 8, plan(new Removal(0, 1), 0)));
+        assertEquals(List.of(1), inventory.counts());
+        assertEquals(0, inventory.givenUnits());
+    }
+
+    @Test
     void duplicateRemovalFaultIsRejectedWithoutMutation() {
         var inventory = inventory(false, slot(2, 9));
         var bad = plan(new Removal(0, 1), new Removal(0, 1), 8);
