@@ -1,5 +1,6 @@
 # Paid Waystones
 
+<!-- PROJECT_PAGE_START -->
 Paid Waystones lets Waystones' native emerald item costs be paid with vanilla emeralds or emerald blocks.
 
 Waystones remains the sole owner of pricing. Configure costs with `teleports.warpRequirements` in `config/waystones-common.toml`.
@@ -13,6 +14,10 @@ When a native item cost charges `minecraft:emerald`:
 - Other item, experience, level, cooldown, source and dimensional requirements keep their native behavior.
 
 Paid Waystones adds no currency account, pricing configuration, command, block or item.
+
+![A Waystone in a real NeoForge multiplayer scene](docs/screenshots/paid-waystones-world.png)
+
+![Waystones menu showing a one-emerald teleport cost](docs/screenshots/paid-waystones-emerald-cost.png)
 
 ## Supported versions
 
@@ -33,6 +38,15 @@ The exact machine-readable matrix and upstream Waystones version IDs are in [`su
 - Shogi on Minecraft 26.x
 
 Both client and server should install the mod.
+
+## Reporting a problem
+
+Include the Minecraft version, loader, Paid Waystones, Waystones, Balm and RinLib versions, plus the smallest reproducible payment case.
+
+Source and issue tracker: https://github.com/rinchan-hoshino/waystone-emeralds
+<!-- PROJECT_PAGE_END -->
+
+---
 
 ## Implementation
 
