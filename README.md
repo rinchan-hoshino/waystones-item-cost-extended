@@ -1,6 +1,7 @@
 # Paid Waystones
 
 <!-- PROJECT_PAGE_START -->
+
 Paid Waystones lets Waystones' native emerald item costs be paid with vanilla emeralds or emerald blocks.
 
 Waystones remains the sole owner of pricing. Configure costs with `teleports.warpRequirements` in `config/waystones-common.toml`.
@@ -42,6 +43,21 @@ Both client and server should install the mod.
 Include the Minecraft version, loader, Paid Waystones, Waystones, Balm and RinLib versions, plus the smallest reproducible payment case.
 
 Source and issue tracker: https://github.com/rinchan-hoshino/waystone-emeralds
+
+## Screenshots
+
+### Emerald-denominated travel cost
+
+![Waystones destination screen showing an emerald cost for a 1,205-block journey](docs/screenshots/paid-waystones-emerald-cost.png)
+
+With the demonstrated Waystones configuration, the 1,205-block destination visibly costs one emerald. The player starts with one emerald block and remains at experience level 20.
+
+### Exact emerald-block change
+
+![Inventory after travel showing eight emeralds and experience level 20 unchanged](docs/screenshots/paid-waystones-change.png)
+
+After paying the one-emerald cost from that block, the remaining value is returned as eight emeralds while the player's experience level stays unchanged.
+
 <!-- PROJECT_PAGE_END -->
 
 ---
