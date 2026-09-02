@@ -15,9 +15,7 @@ When a native item cost charges `minecraft:emerald`:
 
 Paid Waystones adds no currency account, pricing configuration, command, block or item.
 
-![A Waystone in a real NeoForge multiplayer scene](docs/screenshots/paid-waystones-world.png)
 
-![Waystones menu showing a one-emerald teleport cost](docs/screenshots/paid-waystones-emerald-cost.png)
 
 ## Supported versions
 
