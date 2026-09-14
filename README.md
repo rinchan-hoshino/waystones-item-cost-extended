@@ -18,6 +18,28 @@ Paid Waystones adds no currency account, pricing configuration, command, block o
 
 
 
+## Configure emerald costs (Minecraft 1.21.1)
+
+Installing Paid Waystones does not replace Waystones' default XP prices. On Waystones 21.1.44, configure the server's `config/waystones-common.toml` (the local instance for singleplayer).
+
+For a minimal flat price of one emerald per teleport, replace the existing `warpRequirements` list under `[teleports]` with:
+
+```toml
+[teleports]
+enableCosts = true
+warpRequirements = ["add_item_cost(minecraft:emerald, 1)"]
+```
+
+Edit the existing section rather than adding a second `[teleports]` section. Back up your config first and restart the server or singleplayer instance after saving. This minimal example replaces all existing warp requirements, including cooldown and exemption rules; preserve any rules you still want. It applies a flat price rather than the distance-based pricing shown in the screenshots.
+
+Test in Survival: one emerald block should pay the one-emerald charge and return eight emeralds, without charging XP. Creative players are exempt.
+
+- Still paying XP: the active `warpRequirements` still contains XP rules, or you edited a client config instead of the server config.
+- Paying nothing: check `enableCosts = true`, the active item-cost rule, and that the player is not in Creative mode. Disabling costs does not switch the currency to emeralds.
+- Emeralds work but emerald blocks do not: check that Paid Waystones and its dependencies are installed on the server as well as the client, then report the exact configuration and logs.
+
+The `add_item_cost` syntax is documented in [Waystones' official warp rules guide](https://mods.twelveiterations.com/minecraft/waystones/guides/warp-rules). Minecraft 26.x uses a different configuration layout; this example is specifically for 1.21.1.
+
 ## Supported versions
 
 Version 1.0.2 follows every current official Waystones loader target that has native item-cost rules:
