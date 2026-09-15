@@ -145,8 +145,20 @@ def run_profile(profile, rinlib_dir, reuse_existing=False):
         shutil.rmtree(ROOT / "fabric" / "build" / "generated", ignore_errors=True)
 
     if module == "fabric" and profile["minecraft"] == "26.1.2":
+        profiles = json.loads(PROFILES_FILE.read_text())["profiles"]
+        neo = next(x for x in profiles if x["minecraft"] == "26.1.2" and x["loader"] == "neoforge")
         command = [
             str(GRADLE_9_2), "--no-daemon", "--no-configuration-cache", "-p", "fabric-cross26", ":fabric:jar",
+            f"-Pfabric_loader_version={profile['loader_version']}",
+            f"-Pfabric_version={profile['fabric_api']}",
+            f"-Pwaystones_fabric_version={profile['waystones']['version_number']}",
+            f"-Pwaystones_neoforge_version={neo['waystones']['version_number']}",
+            f"-Pbalm_fabric_version={profile['balm']['version_number']}",
+            f"-Pbalm_neoforge_version={neo['balm']['version_number']}",
+            f"-Pshogi_fabric_version={profile['shogi']['version_number']}",
+            f"-Pgame_versions_json={json.dumps(profile['game_versions'], separators=(',', ':'))}",
+            f"-Pmod_version={release_version}",
+            f"-Prinlib_version={json.loads(PROFILES_FILE.read_text())['rinlib_version']}",
             f"-PrinlibDir={rinlib_dir}",
             f"-PprofileDependenciesDir={profile_dependencies}",
             f"-PprofileId={profile_id}",
