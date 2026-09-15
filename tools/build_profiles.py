@@ -12,16 +12,28 @@ ROOT = Path(__file__).resolve().parents[1]
 PROFILES_FILE = ROOT / "support" / "profiles.json"
 DIST = ROOT / "build" / "profiles"
 LOGS = ROOT / "build" / "profile-logs"
-HOME = Path.home()
-RIN_GRADLE = Path(os.environ.get("RIN_GRADLE", HOME / ".local/bin/rin-gradle"))
 GRADLE_8 = ROOT / "gradlew"
 GRADLE_9_2 = ROOT / "tools/gradle-9.2.1/gradlew"
 GRADLE_9_5 = ROOT / "tools/gradle-9.5.1/gradlew"
-JDK = {
-    17: Path(os.environ.get("JAVA_21_HOME", HOME / ".local/jdk-21")),
-    21: Path(os.environ.get("JAVA_21_HOME", HOME / ".local/jdk-21")),
-    25: Path(os.environ.get("JAVA_25_HOME", HOME / ".local/jdk-25")),
-}
+def java_home(version):
+    value = os.environ.get(f"JAVA_{version}_HOME") or os.environ.get("JAVA_HOME")
+    if not value or not (Path(value) / "bin/java").is_file():
+        raise RuntimeError(f"Set JAVA_{version}_HOME to a JDK installation")
+    return Path(value)
+
+
+
+def source_fingerprint():
+    digest = hashlib.sha256()
+    for path in sorted(ROOT.rglob("*")):
+        relative = path.relative_to(ROOT)
+        if not path.is_file() or any(part in {".git", ".gradle", "build", "runtime-tests", "docs", "__pycache__"} for part in relative.parts):
+            continue
+        if path.suffix == ".md":
+            continue
+        digest.update(str(relative).encode())
+        digest.update(path.read_bytes())
+    return digest.hexdigest()
 
 
 def verify_locked_maven() -> None:
@@ -105,19 +117,22 @@ def snapshot_classpath(profile_id: str, classpath_output: Path) -> Path:
 def run_profile(profile, rinlib_dir, reuse_existing=False):
     profile_id = profile["id"]
     release_version = json.loads(PROFILES_FILE.read_text())["paid_waystones_version"]
-    expected = f"paid-waystones-{release_version}+{profile['minecraft']}-{profile['loader']}.jar"
+    expected = f"waystones-item-cost-extended-{release_version}+{profile['minecraft']}-{profile['loader']}.jar"
     destination = DIST / expected
-    if destination.exists() and reuse_existing:
-        print(f"{profile_id}\t{destination}\t(existing)")
-        return
+    receipt = DIST / (profile_id + ".json")
+    fingerprint = source_fingerprint()
+    if destination.exists() and reuse_existing and receipt.exists():
+        previous = json.loads(receipt.read_text())
+        if previous.get("source_fingerprint") == fingerprint and previous.get("sha512") == sha512(destination):
+            print(f"{profile_id}\t{destination}\t(verified)")
+            return
     module = module_for(profile)
     audit_project = f":{module}"
-    gradle_java_home = JDK[25] if module == "fabric" and profile["java"] >= 25 else JDK[21]
+    gradle_java_home = java_home(25 if module == "fabric" and profile["java"] >= 25 else 21)
     env = os.environ.copy()
     env["JAVA_HOME"] = str(gradle_java_home)
     env["PATH"] = f"{gradle_java_home / 'bin'}:{env['PATH']}"
-    toolchains = [HOME / ".local/jdk-17", HOME / ".local/jdk-21", HOME / ".local/jdk-25"]
-    env["GRADLE_OPTS"] = f"-Dorg.gradle.java.installations.paths={','.join(map(str, toolchains))}"
+    toolchains = sorted({v for k, v in os.environ.items() if k.startswith("JAVA_") and k.endswith("_HOME")})
 
     subprocess.run(
         [sys.executable, str(ROOT / "tools" / "prepare_profile_dependencies.py"), "--profile", profile_id],
@@ -151,6 +166,8 @@ def run_profile(profile, rinlib_dir, reuse_existing=False):
             f"-Pbalm_fabric_version={profile['balm']['version_number']}",
             f"-Pbalm_neoforge_version={neo['balm']['version_number']}",
             f"-Pgame_versions_json={json.dumps(profile['game_versions'], separators=(',', ':'))}",
+            f"-Pmod_version={release_version}",
+            f"-Prinlib_version={json.loads(PROFILES_FILE.read_text())['rinlib_version']}",
             f"-PrinlibDir={rinlib_dir}",
             f"-PprofileDependenciesDir={profile_dependencies}",
             f"-PprofileId={profile_id}",
@@ -159,7 +176,7 @@ def run_profile(profile, rinlib_dir, reuse_existing=False):
         audit_project = ":"
     elif module == "fabric":
         if profile["minecraft"].startswith("26."):
-            fabric_gradle, loom_version = GRADLE_9_5, "1.17-SNAPSHOT"
+            fabric_gradle, loom_version = GRADLE_9_5, "1.17.20"
         elif tuple(map(int, profile["minecraft"].split("."))) >= (1, 21, 1):
             fabric_gradle, loom_version = GRADLE_9_2, "1.14.10"
         else:
@@ -175,6 +192,8 @@ def run_profile(profile, rinlib_dir, reuse_existing=False):
             f"-Psource_generation={profile['generation']}",
             f"-Pjava_version={profile['java']}",
             f"-Pgame_versions_json={json.dumps(profile['game_versions'], separators=(',', ':'))}",
+            f"-Pmod_version={release_version}",
+            f"-Prinlib_version={json.loads(PROFILES_FILE.read_text())['rinlib_version']}",
             f"-PrinlibDir={rinlib_dir}",
             f"-PprofileDependenciesDir={profile_dependencies}",
         ]
@@ -191,7 +210,7 @@ def run_profile(profile, rinlib_dir, reuse_existing=False):
             f"-PprofileDependenciesDir={profile_dependencies}",
             f":{module}:clean", f":{module}:jar",
         ]
-        output_dir = ROOT / module / "build" / "libs"
+        output_dir = ROOT / "build/profile-work" / profile_id / module / "libs"
 
     classpath_output = ROOT / "build" / "profile-classpaths" / f"{profile_id}.txt"
     production_classpath_output = ROOT / "build" / "profile-production-classpaths" / f"{profile_id}.txt"
@@ -203,11 +222,11 @@ def run_profile(profile, rinlib_dir, reuse_existing=False):
         f"-PauditClasspathOutput={classpath_output}",
         f"-PauditProductionClasspathOutput={production_classpath_output}",
     ]
-    command.append(audit_task)
+    command.extend([audit_task, "-Porg.gradle.java.installations.paths=" + ",".join(toolchains)])
     LOGS.mkdir(parents=True, exist_ok=True)
     log = LOGS / f"{profile_id}.log"
     with log.open("w") as stream:
-        result = subprocess.run([str(RIN_GRADLE), "--", *command], cwd=ROOT, env=env, stdout=stream, stderr=subprocess.STDOUT)
+        result = subprocess.run(command, cwd=ROOT, env=env, stdout=stream, stderr=subprocess.STDOUT)
     if result.returncode:
         tail = "\n".join(log.read_text(errors="replace").splitlines()[-60:])
         raise RuntimeError(f"{profile_id} failed; log={log}\n{tail}")
@@ -221,7 +240,11 @@ def run_profile(profile, rinlib_dir, reuse_existing=False):
         raise RuntimeError(f"{profile_id} did not produce {expected}: {[p.name for p in candidates]}")
     DIST.mkdir(parents=True, exist_ok=True)
     shutil.copy2(artifact, destination)
-    print(f"{profile_id}\t{destination}")
+    if source_fingerprint() != fingerprint:
+        raise RuntimeError("Sources changed during the build; rerun this profile")
+    receipt.write_text(json.dumps({"profile": profile_id, "file": str(destination),
+                                  "source_fingerprint": fingerprint, "sha512": sha512(destination)}, indent=2) + "\n")
+    print(f"{profile_id}\t{destination}", flush=True)
 
 
 def main():

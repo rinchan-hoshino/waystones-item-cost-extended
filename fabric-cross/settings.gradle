@@ -6,4 +6,4 @@ pluginManagement {
         mavenCentral()
     }
 }
-rootProject.name = 'paid-waystones-fabric-1.21.11'
+rootProject.name = 'waystones-item-cost-extended-fabric-1.21.11'

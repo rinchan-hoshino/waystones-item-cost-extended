@@ -4,7 +4,10 @@ ext.releaseVersion = new groovy.json.JsonSlurper().parse(file('support/profiles.
 
 allprojects {
     repositories {
-        mavenLocal()
+        maven {
+            url = 'https://libraries.minecraft.net'
+            content { includeGroup 'org.lwjgl' }
+        }
         mavenCentral()
         maven { url = 'https://maven.fabricmc.net' }
         maven { url = 'https://maven.neoforged.net/releases' }
@@ -17,11 +20,12 @@ allprojects {
 }
 
 ext.configurePaidWaystones = { Project target ->
+    target.layout.buildDirectory = rootProject.layout.buildDirectory.dir("profile-work/${profile.id}/${target.name}")
     target.group = 'dev.rinchan'
     target.version = "${releaseVersion}+${profile.minecraft}-${profile.loader}"
 
     target.base {
-        archivesName = 'paid-waystones'
+        archivesName = 'waystones-item-cost-extended'
     }
     target.java {
         toolchain.languageVersion = JavaLanguageVersion.of(Math.max(21, profile.java as int))
@@ -37,6 +41,10 @@ ext.configurePaidWaystones = { Project target ->
 
     target.sourceSets.main.java {
         srcDir rootProject.file('common/src/main/java')
+        if (profile.generation == 'requirement') srcDir rootProject.file("networking/requirement-${profile.minecraft in ['1.21.10', '1.21.11'] ? 'context' : 'player'}/src/main/java")
+        if (profile.generation == 'requirement') srcDir rootProject.file("networking/${profile.minecraft == '1.20.4' ? 'legacy' : profile.minecraft == '1.21.11' ? '1.21.11' : 'modern'}/src/main/java")
+        if (profile.generation == 'requirement' && !(profile.minecraft in ['1.20.4', '1.21.11'])) srcDir rootProject.file("networking/${profile.minecraft in ['1.20.6', '1.21', '1.21.1', '1.21.2', '1.21.3', '1.21.4'] ? 'callbacks' : 'codec'}/src/main/java")
+        srcDir rootProject.file("adapters/${profile.minecraft == '1.20.4' ? '1.20.4' : profile.minecraft in ['1.20.6', '1.21', '1.21.1'] ? '1.21.1' : profile.minecraft == '1.21.3' ? '1.21.3' : profile.minecraft.startsWith('26.') ? '26' : profile.minecraft == '1.21.11' ? '1.21.11' : '1.21.4'}/src/main/java")
         srcDir rootProject.file("versions/${profile.generation}/src/main/java")
     }
     target.sourceSets.main.resources {
@@ -57,7 +65,7 @@ ext.configurePaidWaystones = { Project target ->
             copy {
                 from rootProject.file('templates/paid_waystones.mixins.json')
                 into out
-                expand(mixin_class: profile.generation == 'shogi' ? 'ItemCostMixin' : 'ItemRequirementMixin')
+                expand(mixin_class: profile.generation == 'shogi' ? 'ItemCostMixin' : 'PaymentRequirementMixin", "ItemRequirementMixin", "ItemRequirementsContextMixin", "NetworkingMixin')
             }
             if (profile.loader == 'fabric') {
                 copy {
@@ -81,12 +89,12 @@ ext.configurePaidWaystones = { Project target ->
     target.tasks.named('processResources').configure { dependsOn generateProfileResources }
     target.tasks.named('jar').configure {
         manifest.attributes(
-            'Implementation-Title': 'Paid Waystones',
+            'Implementation-Title': 'Waystones Item Cost Extended',
             'Implementation-Version': target.version,
             'Implementation-Vendor': 'RinChan',
             'MixinConfigs': 'paid_waystones.mixins.json'
         )
-        archiveFileName = "paid-waystones-${releaseVersion}+${profile.minecraft}-${profile.loader}.jar"
+        archiveFileName = "waystones-item-cost-extended-${releaseVersion}+${profile.minecraft}-${profile.loader}.jar"
     }
 }
 
@@ -114,7 +122,7 @@ side="BOTH"
 [[dependencies.waystone_emeralds]]
 modId="neoforge"
 type="required"
-versionRange="[${selected.loader_version.split('\\.')[0]},)"
+versionRange="[${selected.loader_version},)"
 ordering="NONE"
 side="BOTH"
 """ : '',

@@ -13,4 +13,4 @@ pluginManagement {
     }
 }
 
-rootProject.name = 'paid-waystones-fabric'
+rootProject.name = 'waystones-item-cost-extended-fabric'

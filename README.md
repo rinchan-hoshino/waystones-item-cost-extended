@@ -1,84 +1,71 @@
-# Paid Waystones
+# Waystones Item Cost Extended
+
+<p align="center"><img src="common/src/main/resources/icon.png" alt="An activated waystone with an emerald and an emerald block" width="224" /></p>
 
 <!-- PROJECT_PAGE_START -->
 
-Paid Waystones lets Waystones' native emerald item costs be paid with vanilla emeralds or emerald blocks.
+Waystones Item Cost Extended is a Waystones add-on for compressed and decompressed item payments and combined item costs.
 
-Waystones remains the sole owner of pricing. Configure costs with `teleports.warpRequirements` in `config/waystones-common.toml`.
+Configure item costs through `warpRequirements` in versions of Waystones that support it.
 
-When a native item cost charges `minecraft:emerald`:
+You can combine several item types in the same payment. For example, charge 3 emeralds and 2 oak logs:
 
-- One emerald block counts as nine emeralds.
-- Excess value is returned as loose emeralds.
-- Creative-mode players are not charged.
-- Legacy Waystones rollback calls refund the consumed emerald value.
-- Other item, experience, level, cooldown, source and dimensional requirements keep their native behavior.
+```toml
+warpRequirements = [
+    "add_item_cost(minecraft:emerald, 3)",
+    "add_item_cost(minecraft:oak_log, 2)"
+]
+```
 
-Paid Waystones adds no currency account, pricing configuration, command, block or item.
+On Minecraft 26.x, use Waystones’ Shogi syntax:
 
+```toml
+warpRequirements = [
+    "item_cost('minecraft:emerald', 3)",
+    "item_cost('minecraft:oak_log', 2)"
+]
+```
 
+You can also allow items connected by reversible compression and decompression recipes to be used for payment. Set the following in `config/waystones-item-cost-extended.properties`, then restart the game or server:
 
-## Supported versions
+```properties
+recipePayments=true
+```
 
-Version 1.0.2 follows every current official Waystones loader target that has native item-cost rules:
+For example, with a cost of 3 iron ingots, you can pay with 27 iron nuggets or 1 iron block and receive 6 iron ingots in change.
 
-- Minecraft 1.20.4 and 1.20.6
-- Minecraft 1.21 through 1.21.11
-- Minecraft 26.1.2 and 26.2
-- Fabric, Forge and NeoForge wherever Waystones publishes that loader
+```toml
+warpRequirements = ["add_item_cost(minecraft:iron_ingot, 3)"]
+```
 
-The exact machine-readable matrix and upstream Waystones version IDs are in [`support/profiles.json`](support/profiles.json). Minecraft 1.20.2 and older are intentionally unsupported because those Waystones releases do not provide the native item-cost system this mod extends.
+On Minecraft 26.x:
 
-## Requirements
+```toml
+warpRequirements = ["item_cost('minecraft:iron_ingot', 3)"]
+```
 
-- Waystones
-- Balm
-- RinLib 1.0.0
-- Shogi on Minecraft 26.x
+## Installation requirements
 
-Both client and server should install the mod.
+Install the following dependencies:
 
-## Reporting a problem
-
-Include the Minecraft version, loader, Paid Waystones, Waystones, Balm and RinLib versions, plus the smallest reproducible payment case.
-
-Source and issue tracker: https://github.com/rinchan-hoshino/waystone-emeralds
+- [Waystones](https://modrinth.com/mod/waystones)
+- [RinLib](https://modrinth.com/mod/rinlib)
 
 ## Screenshots
 
-### Emerald-denominated travel cost
+**Combined item costs** — destinations charge different combinations of emeralds and oak logs. Both items are deducted after teleporting.
 
-![Waystones destination screen showing an emerald cost for a 1,205-block journey](docs/screenshots/paid-waystones-emerald-cost.png)
+![Combined item costs before teleporting](docs/images/combined-before.png)
+![Emeralds and oak logs deducted after teleporting](docs/images/combined-after.png)
 
-With the demonstrated Waystones configuration, the 1,205-block destination visibly costs one emerald. The player starts with one emerald block and remains at experience level 20.
+**Decompressed item payments** — paying an iron-ingot cost with iron nuggets.
 
-### Exact emerald-block change
+![Iron nuggets before teleporting](docs/images/nuggets-before.png)
+![Iron nuggets after teleporting](docs/images/nuggets-after.png)
 
-![Inventory after travel showing eight emeralds and experience level 20 unchanged](docs/screenshots/paid-waystones-change.png)
+**Compressed item payments** — paying an iron-ingot cost with iron blocks.
 
-After paying the one-emerald cost from that block, the remaining value is returned as eight emeralds while the player's experience level stays unchanged.
+![Iron blocks before teleporting](docs/images/blocks-before.png)
+![Iron blocks and returned ingots after teleporting](docs/images/blocks-after.png)
 
 <!-- PROJECT_PAGE_END -->
-
----
-
-## Implementation
-
-One payment implementation uses RinLib's denomination planner. Loader builds select one of two thin Waystones adapters:
-
-- `ItemRequirementMixin` for the classic Waystones requirement API through Minecraft 1.21.11.
-- `ItemCostMixin` for the Shogi-backed rule engine on Minecraft 26.x.
-
-The native requirement and renderer classes remain in place, so pricing, menu rendering, synchronization and teleport orchestration stay owned by Waystones.
-
-## Build
-
-Build one profile:
-
-```bash
-python3 tools/build_profiles.py \
-  --profile 1.21.11-neoforge \
-  --rinlib-dir /path/to/rinlib/build/portable-profiles
-```
-
-Build every profile by omitting `--profile`.

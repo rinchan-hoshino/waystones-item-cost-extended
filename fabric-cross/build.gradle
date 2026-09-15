@@ -14,7 +14,7 @@ repositories {
 
 group = 'dev.rinchan'
 version = "${mod_version}+${minecraft_version}-fabric"
-base.archivesName = 'paid-waystones'
+base.archivesName = 'waystones-item-cost-extended'
 
 def profileId = providers.gradleProperty('profileId').get()
 def profileDependenciesDir = providers.gradleProperty('profileDependenciesDir').get()
@@ -34,11 +34,15 @@ dependencies {
 
 sourceSets.main.java {
     srcDir '../common/src/main/java'
+    srcDir '../networking/1.21.11/src/main/java'
+    srcDir '../networking/requirement-context/src/main/java'
+    srcDir '../adapters/1.21.11/src/main/java'
     srcDir '../versions/requirement/src/main/java'
 }
 
 def generatedResources = layout.buildDirectory.dir('generated/profileResources')
 sourceSets.main.resources.srcDir(generatedResources)
+sourceSets.main.resources.srcDir('../common/src/main/resources')
 def profileValues = [
     version: mod_version,
     java_version: java_version,
@@ -47,7 +51,7 @@ def profileValues = [
     waystones_version: waystones_fabric_version.split('\\+')[0],
     balm_version: balm_fabric_version.split('\\+')[0],
     shogi_dependency_json: '',
-    mixin_class: 'ItemRequirementMixin'
+    mixin_class: 'PaymentRequirementMixin", "ItemRequirementMixin", "ItemRequirementsContextMixin", "NetworkingMixin'
 ]
 tasks.register('generateProfileResources', Copy) {
     inputs.properties(profileValues)

@@ -1,10 +1,9 @@
 package dev.rinchan.waystoneemeralds.mixin;
 
-import dev.rinchan.waystoneemeralds.payment.EmeraldInventory;
-import dev.rinchan.waystoneemeralds.payment.LegacyPaymentState;
+import dev.rinchan.waystoneemeralds.payment.RequirementPayment;
+import net.blay09.mods.waystones.api.requirement.WarpRequirement;
 import net.blay09.mods.waystones.requirement.ItemRequirement;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.Items;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
@@ -14,37 +13,28 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(ItemRequirement.class)
 public abstract class ItemRequirementMixin {
-    @Unique
-    private final LegacyPaymentState paidWaystones$paymentState = new LegacyPaymentState();
+    @Unique private RequirementPayment itemCostExtended$payment;
+
+    @Unique private RequirementPayment itemCostExtended$payment() {
+        if (itemCostExtended$payment == null)
+            itemCostExtended$payment = new RequirementPayment((WarpRequirement) (Object) this);
+        return itemCostExtended$payment;
+    }
 
     @Inject(method = "canAfford", at = @At("HEAD"), cancellable = true, remap = false)
-    private void paidWaystones$acceptEmeraldBlocks(Player player, CallbackInfoReturnable<Boolean> cir) {
-        var requirement = (ItemRequirement) (Object) this;
-        if (requirement.getItemStack().is(Items.EMERALD)) {
-            cir.setReturnValue(EmeraldInventory.canPay(player, requirement.getCount()));
-        }
+    private void itemCostExtended$canPay(Player player, CallbackInfoReturnable<Boolean> callback) {
+        callback.setReturnValue(itemCostExtended$payment().canAfford(player));
     }
 
     @Inject(method = "consume", at = @At("HEAD"), cancellable = true, remap = false)
-    private void paidWaystones$consumeEmeraldValue(Player player, CallbackInfo ci) {
-        var requirement = (ItemRequirement) (Object) this;
-        if (requirement.getItemStack().is(Items.EMERALD)) {
-            int requiredUnits = requirement.getCount();
-            paidWaystones$paymentState.recordCharge(
-                EmeraldInventory.consume(player, requiredUnits),
-                player.getAbilities().instabuild,
-                requiredUnits
-            );
-            ci.cancel();
-        }
+    private void itemCostExtended$pay(Player player, CallbackInfo callback) {
+        itemCostExtended$payment().consume(player, requirement -> requirement.consume(player));
+        callback.cancel();
     }
 
     @Inject(method = "rollback", at = @At("HEAD"), cancellable = true, remap = false)
-    private void paidWaystones$refundEmeraldValue(Player player, CallbackInfo ci) {
-        var requirement = (ItemRequirement) (Object) this;
-        if (requirement.getItemStack().is(Items.EMERALD)) {
-            EmeraldInventory.refund(player, paidWaystones$paymentState.takeRefundUnits());
-            ci.cancel();
-        }
+    private void itemCostExtended$refund(Player player, CallbackInfo callback) {
+        itemCostExtended$payment().rollback(requirement -> requirement.rollback(player));
+        callback.cancel();
     }
 }

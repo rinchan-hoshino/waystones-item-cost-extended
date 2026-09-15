@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Verify Paid Waystones profile JAR metadata and generation-owned resources."""
+"""Verify Waystones Item Cost Extended profile JAR metadata and generation-owned resources."""
 
 from __future__ import annotations
 
@@ -7,22 +7,27 @@ import argparse
 import hashlib
 import json
 import struct
-import tomllib
+try:
+    import tomllib
+except ImportError:
+    import tomli as tomllib
 import zipfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 PROFILES_FILE = ROOT / "support" / "profiles.json"
 MOD_ID = "waystone_emeralds"
-VERSION = "1.0.2"
+MATRIX = json.loads(PROFILES_FILE.read_text())
+VERSION = MATRIX["paid_waystones_version"]
 BASE = "dev/rinchan/waystoneemeralds/"
 PAYMENT_CLASSES = (
-    "payment/EmeraldCostAccumulator.class",
-    "payment/EmeraldDenomination.class",
-    "payment/EmeraldInventory.class",
-    "payment/EmeraldPaymentTransaction.class",
-    "payment/LegacyPaymentState.class",
+    "payment/CraftingDenominations.class",
+    "payment/ItemPayment.class",
+    "payment/PaymentConfig.class",
+    "minecraft/RecipeCurrencies.class",
+    "minecraft/RecipeAccess.class",
 )
+
 
 
 def digest(path: Path, algorithm: str) -> str:
@@ -57,9 +62,9 @@ def verify_fabric(metadata: dict[str, object], profile: dict[str, object]) -> No
         "fabricloader": ">=0.15.0",
         "minecraft": profile["game_versions"],
         "java": f">={profile['java']}",
-        "rinlib": ">=1.0.0",
+        "rinlib": ">=" + MATRIX["rinlib_version"],
         "waystones": f">={profile['waystones']['version_number'].split('+')[0]}",
-        "balm": f">={profile['balm']['version_number'].split('+')[0]}",
+        "balm-fabric": f">={profile['balm']['version_number'].split('+')[0]}",
     }
     if profile["generation"] == "shogi":
         expected["shogi"] = ">=26.1"
@@ -85,12 +90,12 @@ def verify_toml(metadata: dict[str, object], profile: dict[str, object]) -> None
         raise AssertionError(f"dependency IDs {sorted(by_id)} != {sorted(expected_ids)}")
     expected_ranges = {
         "minecraft": minecraft_range(profile["game_versions"]),
-        "rinlib": "[1.0.0,)",
+        "rinlib": "[" + MATRIX["rinlib_version"] + ",)",
         "waystones": f"[{profile['waystones']['version_number'].split('+')[0]},)",
         "balm": f"[{profile['balm']['version_number'].split('+')[0]},)",
     }
     if profile["loader"] == "neoforge":
-        expected_ranges["neoforge"] = f"[{profile['loader_version'].split('.')[0]},)"
+        expected_ranges["neoforge"] = f"[{profile['loader_version']},)"
         if metadata.get("mixins") != [{"config": "paid_waystones.mixins.json"}]:
             raise AssertionError("wrong NeoForge Mixin declaration")
     if profile["generation"] == "shogi":
@@ -116,9 +121,9 @@ def verify_jar(jar: Path, profile: dict[str, object]) -> dict[str, object]:
         if unresolved:
             raise AssertionError(f"unexpanded placeholders in {unresolved}")
         mixin = json.loads(archive.read("paid_waystones.mixins.json"))
-        expected_mixin = "ItemCostMixin" if profile["generation"] == "shogi" else "ItemRequirementMixin"
-        wrong_mixin = "ItemRequirementMixin" if expected_mixin == "ItemCostMixin" else "ItemCostMixin"
-        if mixin.get("package") != "dev.rinchan.waystoneemeralds.mixin" or mixin.get("mixins") != [expected_mixin]:
+        expected_mixin = "ItemCostMixin" if profile["generation"] == "shogi" else "PaymentRequirementMixin"
+        wrong_mixin = "PaymentRequirementMixin" if expected_mixin == "ItemCostMixin" else "ItemCostMixin"
+        if mixin.get("package") != "dev.rinchan.waystoneemeralds.mixin" or mixin.get("mixins") != ([expected_mixin] if profile["generation"] == "shogi" else [expected_mixin, "ItemRequirementMixin", "ItemRequirementsContextMixin", "NetworkingMixin"]):
             raise AssertionError("wrong generation Mixin config")
         required = [BASE + name for name in PAYMENT_CLASSES] + [BASE + f"mixin/{expected_mixin}.class"]
         missing = [name for name in required if name not in names]
@@ -126,6 +131,10 @@ def verify_jar(jar: Path, profile: dict[str, object]) -> dict[str, object]:
             raise AssertionError(f"missing classes {missing}")
         if BASE + f"mixin/{wrong_mixin}.class" in names:
             raise AssertionError(f"wrong generation class {wrong_mixin}")
+        if any(name.startswith("dev/rinchan/rinlib/") or "rinlibprobe" in name or "ProfileChecks" in name for name in names):
+            raise AssertionError("embedded library or runtime test code")
+        if "icon.png" not in names:
+            raise AssertionError("missing project icon")
         manifest = archive.read("META-INF/MANIFEST.MF").decode("utf-8", "replace")
         if "MixinConfigs: paid_waystones.mixins.json" not in manifest.replace("\r\n ", ""):
             raise AssertionError("missing MixinConfigs manifest entry")
@@ -166,7 +175,7 @@ def main() -> int:
     profiles = json.loads(PROFILES_FILE.read_text())["profiles"]
     results = []
     for profile in profiles:
-        jar = args.artifacts / f"paid-waystones-{VERSION}+{profile['minecraft']}-{profile['loader']}.jar"
+        jar = args.artifacts / f"waystones-item-cost-extended-{VERSION}+{profile['minecraft']}-{profile['loader']}.jar"
         if not jar.is_file():
             raise SystemExit(f"missing profile artifact: {jar}")
         results.append(verify_jar(jar, profile))

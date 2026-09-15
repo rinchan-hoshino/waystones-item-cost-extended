@@ -1,15 +1,16 @@
 modLoader="lowcodefml"
 loaderVersion="[1,)"
 license="GPL-3.0-or-later"
-issueTrackerURL="https://github.com/rinchan-hoshino/waystone-emeralds/issues"
+issueTrackerURL="https://github.com/rinchan-hoshino/waystones-item-cost-extended/issues"
 
 [[mods]]
 modId="waystone_emeralds"
 version="${version}"
-displayName="Paid Waystones"
-displayURL="https://modrinth.com/mod/paid-waystones"
+displayName="Waystones Item Cost Extended"
+displayURL="https://modrinth.com/mod/waystones-item-cost-extended"
 authors="RinChan"
-description="Adds emerald-block payment compatibility to Waystones' native item costs."
+logoFile="icon.png"
+description="Extend Waystones with compressed and decompressed item payments and combined item costs."
 
 [[dependencies.waystone_emeralds]]
 modId="minecraft"

@@ -1,41 +1,30 @@
 {
-  "schemaVersion": 1,
-  "repository": "paid-waystones-test-system",
-  "owner": "GameTest",
-  "status": "not_executed",
-  "reason": "Requires real Waystones menu, inventory, loader adapters, and server-side teleport completion.",
+  "schemaVersion": 2,
+  "runner": "runtime-tests/run.py",
   "scenarios": [
     {
-      "id": "payment-survival-success-and-refund",
-      "preconditions": [
-        "Start a supported loader/profile with Waystones and this mod installed.",
-        "Create a survival player with one emerald block and one emerald.",
-        "Configure a teleport whose complete accumulated cost is ten emerald units."
-      ],
-      "steps": [
-        "Open the real Waystones menu and execute the teleport.",
-        "Observe the final inventory only after the teleport commits.",
-        "Repeat with a forced post-charge teleport failure using the runtime test hook."
-      ],
+      "id": "combined-items",
       "assertions": [
-        "The successful teleport removes exactly ten emerald units across all accumulated cost callbacks.",
-        "The failed teleport restores exactly the units actually removed, once.",
-        "No non-currency stack changes and no emerald value is created or destroyed."
+        "Native Waystones configuration retains emerald and oak-log costs.",
+        "Both currencies are charged in one inventory transaction.",
+        "A real server-side teleport changes player position and deducts both currencies."
       ]
     },
     {
-      "id": "payment-creative-and-insufficient-fail-closed",
-      "preconditions": [
-        "Create one creative player and one survival player with fewer units than the configured cost."
-      ],
-      "steps": [
-        "Execute the same paid teleport for the creative player.",
-        "Attempt it for the underfunded survival player."
-      ],
+      "id": "recipe-denominations",
       "assertions": [
-        "Creative inventory is unchanged and the teleport may proceed.",
-        "The underfunded teleport is rejected before any slot mutation.",
-        "No refund receipt remains after the rejected attempt."
+        "Three iron ingots cost 27 iron nuggets.",
+        "One iron block pays three ingots and returns six ingots.",
+        "Related currencies cannot spend the same inventory value twice."
+      ]
+    },
+    {
+      "id": "transaction-state",
+      "assertions": [
+        "Cost preview does not mutate inventory.",
+        "An insufficient payment does not mutate inventory.",
+        "Creative players retain their items.",
+        "Legacy requirement rollback restores the committed inventory once."
       ]
     }
   ]

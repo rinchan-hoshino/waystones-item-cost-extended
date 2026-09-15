@@ -21,14 +21,14 @@ plugins {
     id 'org.gradle.toolchains.foojay-resolver-convention' version '1.0.0'
 }
 
-rootProject.name = 'paid-waystones'
+rootProject.name = 'waystones-item-cost-extended'
 
 def logicOnly = providers.gradleProperty('logicOnly').map { it.toBoolean() }.getOrElse(false)
 def profileId = providers.gradleProperty('profile').getOrElse('1.21.1-neoforge')
 def matrix = new JsonSlurper().parse(file('support/profiles.json'))
 def profile = matrix.profiles.find { it.id == profileId }
 if (profile == null) {
-    throw new GradleException("Unknown Paid Waystones profile: ${profileId}")
+    throw new GradleException("Unknown Waystones Item Cost Extended profile: ${profileId}")
 }
 gradle.ext.paidWaystonesProfile = profile
 include('logic')

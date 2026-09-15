@@ -6,5 +6,5 @@ pluginManagement {
         mavenCentral()
     }
 }
-rootProject.name = 'paid-waystones-fabric-26.1.2'
+rootProject.name = 'waystones-item-cost-extended-fabric-26.1.2'
 include 'common', 'fabric'

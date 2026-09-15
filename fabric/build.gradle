@@ -4,9 +4,10 @@ plugins {
 }
 
 def repositoryRoot = file('..')
-def profileId = "${minecraft_version}-fabric"
+def profileId = providers.gradleProperty("profileId").getOrElse("${minecraft_version}-fabric")
+def dependencyMinecraft = providers.gradleProperty("dependencyMinecraft").getOrElse(minecraft_version)
 def rinlibDir = providers.gradleProperty('rinlibDir').orNull
-def rinlibJar = rinlibDir == null ? null : file("${rinlibDir}/rinlib-${rinlib_version}+${minecraft_version}-fabric.jar")
+def rinlibJar = rinlibDir == null ? null : file("${rinlibDir}/rinlib-${rinlib_version}+${dependencyMinecraft}-fabric.jar")
 def profileDependenciesDir = providers.gradleProperty('profileDependenciesDir').orNull
 def lockedDependency = { String name ->
     profileDependenciesDir == null ? null : file("${profileDependenciesDir}/${name}-${profileId}.jar")
@@ -71,7 +72,11 @@ dependencies {
 
 sourceSets.main.java {
     srcDir new File(repositoryRoot, 'common/src/main/java')
+        if (source_generation == 'requirement') srcDir new File(repositoryRoot, "networking/requirement-${minecraft_version in ['1.21.10', '1.21.11'] ? 'context' : 'player'}/src/main/java")
+    if (source_generation == 'requirement') srcDir new File(repositoryRoot, "networking/${minecraft_version == '1.20.4' ? 'legacy' : minecraft_version == '1.21.11' ? '1.21.11' : 'modern'}/src/main/java")
+        if (source_generation == 'requirement' && !(minecraft_version in ['1.20.4', '1.21.11'])) srcDir new File(repositoryRoot, "networking/${minecraft_version in ['1.20.6', '1.21', '1.21.1', '1.21.2', '1.21.3', '1.21.4'] ? 'callbacks' : 'codec'}/src/main/java")
     srcDir new File(repositoryRoot, "versions/${source_generation}/src/main/java")
+    srcDir new File(repositoryRoot, "adapters/${minecraft_version == '1.20.4' ? '1.20.4' : minecraft_version in ['1.20.6', '1.21', '1.21.1'] ? '1.21.1' : minecraft_version in ['1.21.2', '1.21.3'] ? '1.21.3' : minecraft_version.startsWith('26.') ? '26' : minecraft_version == '1.21.11' ? '1.21.11' : '1.21.4'}/src/main/java")
 }
 sourceSets.main.resources {
     srcDir new File(repositoryRoot, 'common/src/main/resources')
@@ -90,7 +95,7 @@ def generateProfileResources = tasks.register('generateProfileResources') {
         copy {
             from new File(repositoryRoot, 'templates/paid_waystones.mixins.json')
             into out
-            expand(mixin_class: source_generation == 'shogi' ? 'ItemCostMixin' : 'ItemRequirementMixin')
+            expand(mixin_class: source_generation == 'shogi' ? 'ItemCostMixin' : 'PaymentRequirementMixin", "ItemRequirementMixin", "ItemRequirementsContextMixin", "NetworkingMixin')
         }
         copy {
             from new File(repositoryRoot, 'templates/fabric.mod.json')
@@ -126,10 +131,10 @@ tasks.withType(AbstractArchiveTask).configureEach {
 }
 tasks.named('jar').configure {
     manifest.attributes(
-        'Implementation-Title': 'Paid Waystones',
+        'Implementation-Title': 'Waystones Item Cost Extended',
         'Implementation-Version': project.version,
         'Implementation-Vendor': 'RinChan',
         'MixinConfigs': 'paid_waystones.mixins.json'
     )
-    archiveFileName = "paid-waystones-${mod_version}+${minecraft_version}-fabric.jar"
+    archiveFileName = "waystones-item-cost-extended-${mod_version}+${minecraft_version}-fabric.jar"
 }

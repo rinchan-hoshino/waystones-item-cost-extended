@@ -2,13 +2,14 @@
   "schemaVersion": 1,
   "id": "waystone_emeralds",
   "version": "${version}",
-  "name": "Paid Waystones",
-  "description": "Adds emerald-block payment compatibility to Waystones' native item costs.",
+  "name": "Waystones Item Cost Extended",
+  "description": "Extend Waystones with compressed and decompressed item payments and combined item costs.",
+  "icon": "icon.png",
   "authors": ["RinChan"],
   "contact": {
-    "homepage": "https://modrinth.com/mod/paid-waystones",
-    "sources": "https://github.com/rinchan-hoshino/waystone-emeralds",
-    "issues": "https://github.com/rinchan-hoshino/waystone-emeralds/issues"
+    "homepage": "https://modrinth.com/mod/waystones-item-cost-extended",
+    "sources": "https://github.com/rinchan-hoshino/waystones-item-cost-extended",
+    "issues": "https://github.com/rinchan-hoshino/waystones-item-cost-extended/issues"
   },
   "license": "GPL-3.0-or-later",
   "environment": "*",
@@ -19,6 +20,6 @@
     "java": ">=${java_version}",
     "rinlib": ">=${rinlib_version}",
     "waystones": ">=${waystones_version}",
-    "balm": ">=${balm_version}"${shogi_dependency_json}
+    "balm-fabric": ">=${balm_version}"${shogi_dependency_json}
   }
 }

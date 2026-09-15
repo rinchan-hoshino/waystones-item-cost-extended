@@ -22,18 +22,16 @@ minecraft {
 }
 
 repositories {
-    maven minecraft.mavenizer
+    minecraft.mavenizer(it)
     maven fg.forgeMaven
     maven fg.minecraftLibsMaven
 }
 
 def forgeCoordinates = "${p.minecraft}-${p.loader_version}"
-def generatedForgeJar = rootProject.file(".gradle/mavenizer/repo/net/minecraftforge/forge/${forgeCoordinates}/forge-${forgeCoordinates}.jar")
 def profileDependenciesDir = providers.gradleProperty('profileDependenciesDir').map { file(it) }.get()
 
 dependencies {
     implementation minecraft.dependency("net.minecraftforge:forge:${forgeCoordinates}")
-    compileOnly files(generatedForgeJar)
     compileOnly 'org.spongepowered:mixin:0.8.7'
     implementation files(new File(profileDependenciesDir, "balm-${p.id}.jar"))
     implementation files(new File(profileDependenciesDir, "waystones-${p.id}.jar"))

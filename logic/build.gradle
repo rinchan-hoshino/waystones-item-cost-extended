@@ -15,10 +15,7 @@ sourceSets.main.java {
     srcDir rootProject.file('common/src/main/java')
     srcDir rootProject.file('versions/requirement/src/main/java')
     srcDir rootProject.file('versions/shogi/src/main/java')
-    include 'dev/rinchan/waystoneemeralds/payment/EmeraldDenomination.java'
-    include 'dev/rinchan/waystoneemeralds/payment/EmeraldPaymentTransaction.java'
-    include 'dev/rinchan/waystoneemeralds/payment/LegacyPaymentState.java'
-    include 'dev/rinchan/waystoneemeralds/payment/EmeraldCostAccumulator.java'
+    include 'dev/rinchan/waystoneemeralds/payment/CraftingDenominations.java'
 }
 
 dependencies {

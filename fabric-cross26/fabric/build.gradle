@@ -3,7 +3,7 @@ plugins {
     id 'java-library'
 }
 
-base.archivesName = 'paid-waystones'
+base.archivesName = 'waystones-item-cost-extended'
 
 def profileId = providers.gradleProperty('profileId').get()
 def profileDependenciesDir = providers.gradleProperty('profileDependenciesDir').get()

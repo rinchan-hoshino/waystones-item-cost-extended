@@ -1,0 +1,20 @@
+allprojects {
+    afterEvaluate { p ->
+        if (p.plugins.hasPlugin('net.neoforged.moddev')) {
+            def base = new File(System.getProperty('probe.sources'))
+            def probe = p.sourceSets.create('runtimeProbe') {
+                java.srcDirs new File(base, 'common/java'), new File(base, System.getProperty('probe.capture') == 'true' ? 'capture/java' : 'neoforge/java'),
+                        new File(System.getProperty('probe.checks')), new File(base, 'actions-' + System.getProperty('probe.actions', 'none')), new File(base, 'players-' + System.getProperty('probe.players') + '/java')
+                resources.srcDir new File(base, 'neoforge/resources')
+                compileClasspath += p.sourceSets.main.output + p.sourceSets.main.compileClasspath
+                runtimeClasspath += output + p.sourceSets.main.output + p.sourceSets.main.runtimeClasspath
+            }
+            p.neoForge.mods.create('itemcost_probe') { sourceSet(probe) }
+            p.neoForge.runs.create('probeServer') {
+                server()
+                gameDirectory = p.file(System.getProperty('probe.instance'))
+                programArgument '--nogui'
+            }
+        }
+    }
+}
