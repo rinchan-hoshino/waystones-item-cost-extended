@@ -55,17 +55,17 @@ Install the following dependencies:
 
 **Combined item costs** — destinations charge different combinations of emeralds and oak logs. Both items are deducted after teleporting.
 
-![Combined item costs before teleporting](docs/images/combined-before.png)
-![Emeralds and oak logs deducted after teleporting](docs/images/combined-after.png)
+![Combined item costs before teleporting](https://cdn.modrinth.com/data/CXi2TSAN/images/c9ea8ccab13217e98b4c08eef9807c94d219d170.png)
+![Emeralds and oak logs deducted after teleporting](https://cdn.modrinth.com/data/CXi2TSAN/images/188f6c43c9973cacc0e909b2355104b30d90c2e1.png)
 
 **Decompressed item payments** — paying an iron-ingot cost with iron nuggets.
 
-![Iron nuggets before teleporting](docs/images/nuggets-before.png)
-![Iron nuggets after teleporting](docs/images/nuggets-after.png)
+![Iron nuggets before teleporting](https://cdn.modrinth.com/data/CXi2TSAN/images/1054ef8e2a5efa1f5a6a51b54e13c78705f27c05.png)
+![Iron nuggets after teleporting](https://cdn.modrinth.com/data/CXi2TSAN/images/180da901591b0962cd490b9110b531392d20dabf.png)
 
 **Compressed item payments** — paying an iron-ingot cost with iron blocks.
 
-![Iron blocks before teleporting](docs/images/blocks-before.png)
-![Iron blocks and returned ingots after teleporting](docs/images/blocks-after.png)
+![Iron blocks before teleporting](https://cdn.modrinth.com/data/CXi2TSAN/images/77710104e29eeeeb35954463b68c0aeb274cdf63.png)
+![Iron blocks and returned ingots after teleporting](https://cdn.modrinth.com/data/CXi2TSAN/images/faf7b25736f0deb5c20fc8a132383c39f39726ef.png)
 
 <!-- PROJECT_PAGE_END -->
