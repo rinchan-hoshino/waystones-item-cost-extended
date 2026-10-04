@@ -40,4 +40,43 @@ class CraftingDenominationsTest {
             new Recipe("a", 3, "b", 1), new Recipe("b", 1, "a", 3)));
         assertEquals(81, CraftingDenominations.resolve("ingot", recipes).orElseThrow().get("block"));
     }
+
+    @Test void largeRecipeSetsDoNotRequirePairwiseRecipeScans() {
+        var recipes = new java.util.ArrayList<>(IRON);
+        for (int i = 0; i < 1000; i++) {
+            recipes.add(new Recipe("base_" + i, 9, "block_" + i, 1));
+            recipes.add(new Recipe("block_" + i, 1, "base_" + i, 9));
+        }
+        var counted = new CountingRecipes(recipes);
+        assertEquals(Map.of("nugget", 1, "ingot", 9, "block", 81),
+            CraftingDenominations.resolve("ingot", counted).orElseThrow());
+        assertTrue(counted.reads <= recipes.size() * 12L,
+            () -> "Recipe lookup must scale linearly; visited " + counted.reads
+                + " recipes for a corpus of " + recipes.size());
+    }
+
+    @Test void scaledReversibleRecipesRetainTheirExactConversionRatio() {
+        assertEquals(Map.of("ingot", 1, "block", 9),
+            CraftingDenominations.resolve("ingot", List.of(
+                new Recipe("ingot", 18, "block", 2),
+                new Recipe("block", 3, "ingot", 27))).orElseThrow());
+    }
+
+    @Test void largeCoprimeCountsDoNotOverflowReverseMatching() {
+        assertEquals(Map.of("small", 2147483646, "large", 2147483647, "unit", 1),
+            CraftingDenominations.resolve("small", List.of(
+                new Recipe("small", 2147483647, "large", 2147483646),
+                new Recipe("large", 2147483646, "small", 2147483647),
+                new Recipe("large", 1, "unit", 2147483647),
+                new Recipe("unit", 2147483647, "large", 1))).orElseThrow());
+    }
+
+    private static final class CountingRecipes extends java.util.AbstractList<Recipe> {
+        private final List<Recipe> values;
+        private long reads;
+
+        private CountingRecipes(List<Recipe> values) { this.values = values; }
+        @Override public Recipe get(int index) { reads++; return values.get(index); }
+        @Override public int size() { return values.size(); }
+    }
 }

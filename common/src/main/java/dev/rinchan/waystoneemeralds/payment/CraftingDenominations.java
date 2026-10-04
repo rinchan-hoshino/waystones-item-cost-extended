@@ -4,6 +4,7 @@ import java.math.BigInteger;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -20,19 +21,31 @@ public final class CraftingDenominations {
                 throw new IllegalArgumentException("A recipe requires item IDs and positive counts");
             }
         }
+
+        private Recipe normalized() {
+            int divisor = inputCount;
+            int remainder = outputCount;
+            while (remainder != 0) {
+                int next = divisor % remainder;
+                divisor = remainder;
+                remainder = next;
+            }
+            return new Recipe(ingredient, inputCount / divisor, result, outputCount / divisor);
+        }
     }
 
     /** Returns no conversion when recipes disagree about value or exceed the planner's range. */
     public static Optional<Map<String, Integer>> resolve(String currency, List<Recipe> recipes) {
+        var ratios = new HashSet<Recipe>();
+        for (var recipe : recipes) ratios.add(recipe.normalized());
         var edges = new HashMap<String, List<Recipe>>();
         for (var recipe : recipes) {
             if (recipe.ingredient().equals(recipe.result()) || recipe.inputCount() == recipe.outputCount()) {
                 continue;
             }
-            boolean reversible = recipes.stream().anyMatch(reverse ->
-                reverse.ingredient().equals(recipe.result()) && reverse.result().equals(recipe.ingredient())
-                    && (long) recipe.inputCount() * reverse.inputCount()
-                        == (long) recipe.outputCount() * reverse.outputCount());
+            var ratio = recipe.normalized();
+            boolean reversible = ratios.contains(new Recipe(ratio.result(), ratio.outputCount(),
+                ratio.ingredient(), ratio.inputCount()));
             if (reversible) {
                 edges.computeIfAbsent(recipe.ingredient(), ignored -> new ArrayList<>()).add(recipe);
             }
