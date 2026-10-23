@@ -276,6 +276,9 @@ def main():
             raise SystemExit(f"Unknown profiles: {sorted(missing)}")
     for profile in profiles:
         run_profile(profile, args.rinlib_dir.resolve(), args.reuse_existing)
+    from source_archive import build_archive
+    source = DIST / f"waystones-item-cost-extended-{data['paid_waystones_version']}-sources.jar"
+    print(json.dumps(build_archive(ROOT, source), sort_keys=True), flush=True)
 
 
 if __name__ == "__main__":
