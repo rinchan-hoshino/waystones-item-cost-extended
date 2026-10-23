@@ -19,7 +19,7 @@ This repository maintains two distinct representations of project source code:
   ```bash
   python3 tools/source_archive.py verify build/profiles/waystones-item-cost-extended-1.1.1-sources.jar
   ```
-  *Enforces deterministic timestamps, rejects binaries/scripts/nested archives, and validates file hashes against `META-INF/source-archive.json`.*
+  *Checks source-only contents and validates file hashes against `META-INF/source-archive.json`.*
 
 - **Run verification test suite**:
   ```bash
