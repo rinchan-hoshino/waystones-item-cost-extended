@@ -10,6 +10,13 @@ public final class RuntimeProbe {
     public void run(MinecraftServer server) {
         server.execute(() -> {
             try {
+                var subject = System.getProperty("probe.subject");
+                if (subject != null) {
+                    var origin = dev.rinchan.waystoneemeralds.payment.ItemPayment.class
+                        .getProtectionDomain().getCodeSource().getLocation().toString();
+                    require(origin.contains(Path.of(subject).getFileName().toString()),
+                        "payment implementation loads from the final release JAR: " + origin);
+                }
                 ProfileChecks.run(server);
                 Files.writeString(Path.of("item-cost-runtime.pass"), "pass\n");
                 System.out.println("ITEM_COST_RUNTIME_PASS");

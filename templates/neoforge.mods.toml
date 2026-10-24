@@ -43,3 +43,4 @@ versionRange="[${balm_version},)"
 ordering="AFTER"
 side="BOTH"
 ${shogi_dependency_toml}
+${lightman_dependency_toml}

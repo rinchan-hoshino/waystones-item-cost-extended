@@ -32,6 +32,9 @@ neoForge {
 def profileDependenciesDir = providers.gradleProperty('profileDependenciesDir').map { file(it) }.get()
 
 dependencies {
+    if (p.id == '1.21.1-neoforge') {
+        compileOnly files(new File(profileDependenciesDir, "lightmanscurrency-${p.id}.jar"))
+    }
     implementation files(new File(profileDependenciesDir, "balm-${p.id}.jar"))
     implementation files(new File(profileDependenciesDir, "waystones-${p.id}.jar"))
     if (p.generation == 'shogi') {

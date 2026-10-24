@@ -36,7 +36,7 @@ def main() -> None:
     output = ROOT / 'build' / 'profile-dependencies'
     cache = output / 'downloads'
     for profile in profiles:
-        for dependency_name in ('waystones', 'balm'):
+        for dependency_name in ('waystones', 'balm', *(['lightmanscurrency'] if 'lightmanscurrency' in profile else [])):
             dependency = profile[dependency_name]
             target = output / f"{dependency_name}-{profile['id']}.jar"
             download(dependency['url'], target, dependency['sha512'])

@@ -44,6 +44,25 @@ On Minecraft 26.x:
 warpRequirements = ["item_cost('minecraft:iron_ingot', 3)"]
 ```
 
+## Lightmans Currency integration
+
+On Minecraft 1.21.1 (NeoForge), Waystones Item Cost Extended provides optional native integration with [Lightmans Currency](https://modrinth.com/mod/lightmans-currency) (1.21-2.3.0.6+). It is never bundled and not required.
+
+When present, registered coins can be used directly in `warpRequirements`:
+
+```toml
+warpRequirements = [
+    "add_item_cost(lightmanscurrency:coin_iron, 20)",
+    "add_item_cost(minecraft:oak_log, 2)"
+]
+```
+
+- **Coin Selection**: Charges any coin registered in Lightman's native `CoinAPI`, including custom coin chains. Separate coin chains cannot fund one another.
+- **Payment Storage**: Evaluates equipped native and Curios wallets via `WalletHandler`, hotbar slots, main inventory, and occupied offhand coin stacks. Bank accounts are not debited, and loose wallets inside inventory slots are not opened.
+- **Transaction Safety**: Uses native `CoinContainerMoneyHandler` on snapshot copies of wallet contents and inventory slots. Combined item and coin costs preview together and commit after checking both inventory and wallet snapshots; all changed touched storage is guarded before commit. Native requirement rollback restores snapshots once when storage still matches the committed state; changed touched slots are never overwritten. Creative mode and zero-cost routes bypass payment entirely.
+- **Denomination Arithmetic & Change**: Respects configured exchange rates and preserves wallet auto-exchange settings. If change cannot fit into the wallet or main inventory, the charge is refused upfront during preview, preventing partial debits or dropped items.
+- **Configuration**: Native coin payments require no toggle. The `recipePayments` setting in `config/waystones-item-cost-extended.properties` defaults to `false` and solely controls reversible crafting conversions.
+
 ## Installation requirements
 
 Install the following dependencies:

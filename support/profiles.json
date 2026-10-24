@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "paid_waystones_version": "1.1.1",
+  "paid_waystones_version": "1.2.0",
   "rinlib_version": "1.0.2",
   "profiles": [
     {
@@ -289,6 +289,12 @@
         "version_number": "21.0.65+neoforge-1.21.1",
         "url": "https://cdn.modrinth.com/data/MBAkmtvl/versions/KgypwTqX/balm-neoforge-1.21.1-21.0.65.jar",
         "sha512": "779b4f9e9738ae6f010e87f71b2ed5a114eb9b1b3d5b55cf42ad538094e5b064a1d3f4ff00064aac90da1c841a144464d47378d9bffc448a71d87132cb954101"
+      },
+      "lightmanscurrency": {
+        "version_id": "XMHRtEIk",
+        "version_number": "1.21-2.3.0.6",
+        "url": "https://cdn.modrinth.com/data/wvMc8AJt/versions/XMHRtEIk/lightmanscurrency-1.21-2.3.0.6.jar",
+        "sha512": "47ed278271e852ce76cee225b3c8dd762fce4c5a26c4351e449d5553578cd416c056627423597a9cac89228a240c2addf91748d2c5134b902d7da12e41e292a8"
       }
     },
     {

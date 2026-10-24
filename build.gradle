@@ -41,6 +41,7 @@ ext.configurePaidWaystones = { Project target ->
 
     target.sourceSets.main.java {
         srcDir rootProject.file('common/src/main/java')
+        srcDir rootProject.file("compat/${profile.id == '1.21.1-neoforge' ? 'lightman-1.21.1' : 'none'}/src/main/java")
         if (profile.generation == 'requirement') srcDir rootProject.file("networking/requirement-${profile.minecraft in ['1.21.10', '1.21.11'] ? 'context' : 'player'}/src/main/java")
         if (profile.generation == 'requirement') srcDir rootProject.file("networking/${profile.minecraft == '1.20.4' ? 'legacy' : profile.minecraft == '1.21.11' ? '1.21.11' : 'modern'}/src/main/java")
         if (profile.generation == 'requirement' && !(profile.minecraft in ['1.20.4', '1.21.11'])) srcDir rootProject.file("networking/${profile.minecraft in ['1.20.6', '1.21', '1.21.1', '1.21.2', '1.21.3', '1.21.4'] ? 'callbacks' : 'codec'}/src/main/java")
@@ -124,6 +125,14 @@ modId="neoforge"
 type="required"
 versionRange="[${selected.loader_version},)"
 ordering="NONE"
+side="BOTH"
+""" : '',
+        lightman_dependency_toml: selected.containsKey('lightmanscurrency') ? """
+[[dependencies.waystone_emeralds]]
+modId="lightmanscurrency"
+type="optional"
+versionRange="[${selected.lightmanscurrency.version_number},)"
+ordering="AFTER"
 side="BOTH"
 """ : '',
         dependency_kind: selected.loader == 'forge' ? 'mandatory=true' : 'type="required"'

@@ -7,6 +7,7 @@ neoForge { neoFormVersion = libs.versions.neoForm }
 
 sourceSets.main.java {
     srcDir '../../common/src/main/java'
+    srcDir '../../compat/none/src/main/java'
     srcDir '../../adapters/26/src/main/java'
     srcDir '../../versions/shogi/src/main/java'
 }

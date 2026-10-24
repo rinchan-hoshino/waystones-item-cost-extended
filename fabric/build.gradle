@@ -72,6 +72,7 @@ dependencies {
 
 sourceSets.main.java {
     srcDir new File(repositoryRoot, 'common/src/main/java')
+    srcDir new File(repositoryRoot, 'compat/none/src/main/java')
         if (source_generation == 'requirement') srcDir new File(repositoryRoot, "networking/requirement-${minecraft_version in ['1.21.10', '1.21.11'] ? 'context' : 'player'}/src/main/java")
     if (source_generation == 'requirement') srcDir new File(repositoryRoot, "networking/${minecraft_version == '1.20.4' ? 'legacy' : minecraft_version == '1.21.11' ? '1.21.11' : 'modern'}/src/main/java")
         if (source_generation == 'requirement' && !(minecraft_version in ['1.20.4', '1.21.11'])) srcDir new File(repositoryRoot, "networking/${minecraft_version in ['1.20.6', '1.21', '1.21.1', '1.21.2', '1.21.3', '1.21.4'] ? 'callbacks' : 'codec'}/src/main/java")

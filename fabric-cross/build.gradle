@@ -34,6 +34,7 @@ dependencies {
 
 sourceSets.main.java {
     srcDir '../common/src/main/java'
+    srcDir '../compat/none/src/main/java'
     srcDir '../networking/1.21.11/src/main/java'
     srcDir '../networking/requirement-context/src/main/java'
     srcDir '../adapters/1.21.11/src/main/java'

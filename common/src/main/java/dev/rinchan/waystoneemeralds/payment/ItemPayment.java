@@ -14,6 +14,7 @@ public final class ItemPayment {
     private final List<ItemStack> before = new ArrayList<>();
     private final List<ItemStack> after = new ArrayList<>();
     private final List<CraftingDenominations.Recipe> recipes;
+    private final CurrencyPayment currencyPayment;
     private boolean committed;
 
     public ItemPayment(Player player) {
@@ -24,11 +25,13 @@ public final class ItemPayment {
             after.add(stack.copy());
         }
         recipes = RecipeCurrencies.recipes(player);
+        currencyPayment = OptionalCurrencies.open(player, after);
     }
 
     public boolean charge(ItemStack currency, int count) {
         if (count < 0) return false;
         if (player.getAbilities().instabuild || count == 0) return true;
+        if (currencyPayment.handles(currency)) return currencyPayment.charge(currency, count);
         var id = RecipeCurrencies.id(currency.getItem());
         var values = RecipeCurrencies.plain(currency)
             ? CraftingDenominations.resolve(id, recipes).orElse(Map.of(id, 1)) : Map.of(id, 1);
@@ -65,6 +68,7 @@ public final class ItemPayment {
     }
 
     public int available(ItemStack currency) {
+        if (currencyPayment.handles(currency)) return currencyPayment.available(currency);
         var id = RecipeCurrencies.id(currency.getItem());
         var values = RecipeCurrencies.plain(currency)
             ? CraftingDenominations.resolve(id, recipes).orElse(Map.of(id, 1)) : Map.of(id, 1);
@@ -119,15 +123,17 @@ public final class ItemPayment {
     }
 
     public boolean commit() {
-        if (committed || !matches(before)) return false;
+        if (committed || !matches(before) || !currencyPayment.matches(true)) return false;
         write(after);
+        currencyPayment.write(false);
         committed = true;
         return true;
     }
 
     public boolean rollback() {
-        if (!committed || !matches(after)) return false;
+        if (!committed || !matches(after) || !currencyPayment.matches(false)) return false;
         write(before);
+        currencyPayment.write(true);
         committed = false;
         return true;
     }

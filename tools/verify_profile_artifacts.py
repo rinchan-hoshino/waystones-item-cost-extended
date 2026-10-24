@@ -86,6 +86,8 @@ def verify_toml(metadata: dict[str, object], profile: dict[str, object]) -> None
         expected_ids.add("neoforge")
     if profile["generation"] == "shogi":
         expected_ids.add("shogi")
+    if "lightmanscurrency" in profile:
+        expected_ids.add("lightmanscurrency")
     if set(by_id) != expected_ids:
         raise AssertionError(f"dependency IDs {sorted(by_id)} != {sorted(expected_ids)}")
     expected_ranges = {
@@ -100,6 +102,12 @@ def verify_toml(metadata: dict[str, object], profile: dict[str, object]) -> None
             raise AssertionError("wrong NeoForge Mixin declaration")
     if profile["generation"] == "shogi":
         expected_ranges["shogi"] = "[26.1,)"
+    if "lightmanscurrency" in profile:
+        optional = by_id["lightmanscurrency"]
+        if optional.get("type") != "optional" or optional.get("ordering") != "AFTER":
+            raise AssertionError("Lightman must remain an optional, ordered integration")
+        if optional.get("versionRange") != f"[{profile['lightmanscurrency']['version_number']},)":
+            raise AssertionError("wrong optional Lightman API range")
     for mod_id, version_range in expected_ranges.items():
         if by_id[mod_id].get("versionRange") != version_range:
             raise AssertionError(f"{mod_id} range {by_id[mod_id].get('versionRange')!r} != {version_range!r}")
