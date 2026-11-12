@@ -30,19 +30,11 @@ repositories {
 def forgeCoordinates = "${p.minecraft}-${p.loader_version}"
 def profileDependenciesDir = providers.gradleProperty('profileDependenciesDir').map { file(it) }.get()
 
-repositories {
-    flatDir { dirs rinlibDir }
-}
-
 dependencies {
     implementation minecraft.dependency("net.minecraftforge:forge:${forgeCoordinates}")
     compileOnly 'org.spongepowered:mixin:0.8.7'
     implementation files(new File(profileDependenciesDir, "balm-${p.id}.jar"))
     implementation files(new File(profileDependenciesDir, "waystones-${p.id}.jar"))
-    def rinlibEmbedded = dependencies.create("dev.rinchan:rinlib-${p.loader}:${rootProject.ext.rinlibVersion}+${p.minecraft}") {
-        artifact { name = rinlibJar.name - '.jar'; type = 'jar'; extension = 'jar' }
-    }
-    implementation rinlibEmbedded
-    jarJar rinlibEmbedded
+    implementation files(rinlibJar)
     annotationProcessor 'org.spongepowered:mixin:0.8.7:processor'
 }
