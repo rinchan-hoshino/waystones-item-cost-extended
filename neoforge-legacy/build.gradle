@@ -19,11 +19,19 @@ if (p.minecraft == '1.20.4') {
     }
 }
 
+repositories {
+    flatDir { dirs rinlibDir }
+}
+
 dependencies {
     implementation "net.neoforged:neoforge:${p.loader_version}"
     implementation files(new File(profileDependenciesDir, "balm-${p.id}.jar"))
     implementation files(new File(profileDependenciesDir, "waystones-${p.id}.jar"))
-    implementation files(rinlibJar)
+    def rinlibEmbedded = dependencies.create("dev.rinchan:rinlib-${p.loader}:${rootProject.ext.rinlibVersion}+${p.minecraft}") {
+        artifact { name = rinlibJar.name - '.jar'; type = 'jar'; extension = 'jar' }
+    }
+    implementation rinlibEmbedded
+    jarJar rinlibEmbedded
     annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
 }
 

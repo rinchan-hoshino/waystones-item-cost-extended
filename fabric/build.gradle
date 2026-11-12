@@ -8,6 +8,12 @@ def profileId = providers.gradleProperty("profileId").getOrElse("${minecraft_ver
 def dependencyMinecraft = providers.gradleProperty("dependencyMinecraft").getOrElse(minecraft_version)
 def rinlibDir = providers.gradleProperty('rinlibDir').orNull
 def rinlibJar = rinlibDir == null ? null : file("${rinlibDir}/rinlib-${rinlib_version}+${dependencyMinecraft}-fabric.jar")
+def rinlibEmbedded = rinlibDir == null ? null : dependencies.create("dev.rinchan:rinlib-fabric:${rinlib_version}+${dependencyMinecraft}") {
+    artifact { name = "rinlib-${rinlib_version}+${dependencyMinecraft}-fabric"; type = 'jar'; extension = 'jar' }
+}
+if (rinlibDir != null) {
+    repositories { flatDir { dirs rinlibDir } }
+}
 def profileDependenciesDir = providers.gradleProperty('profileDependenciesDir').orNull
 def lockedDependency = { String name ->
     profileDependenciesDir == null ? null : file("${profileDependenciesDir}/${name}-${profileId}.jar")
@@ -66,7 +72,8 @@ dependencies {
         compileOnly files(new File(repositoryRoot, "build/profile-dependencies/shogi-api-${profileId}.jar"))
     }
     if (rinlibJar != null) {
-        implementation files(rinlibJar)
+        implementation rinlibEmbedded
+        include rinlibEmbedded
     }
 }
 

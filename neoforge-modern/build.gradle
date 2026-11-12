@@ -31,6 +31,10 @@ neoForge {
 
 def profileDependenciesDir = providers.gradleProperty('profileDependenciesDir').map { file(it) }.get()
 
+repositories {
+    flatDir { dirs rinlibDir }
+}
+
 dependencies {
     if (p.id == '1.21.1-neoforge') {
         compileOnly files(new File(profileDependenciesDir, "lightmanscurrency-${p.id}.jar"))
@@ -41,5 +45,9 @@ dependencies {
         implementation files(new File(profileDependenciesDir, "shogi-${p.id}.jar"))
         compileOnly files(rootProject.file("build/profile-dependencies/shogi-api-${p.id}.jar"))
     }
-    implementation files(rinlibJar)
+    def rinlibEmbedded = dependencies.create("dev.rinchan:rinlib-${p.loader}:${rootProject.ext.rinlibVersion}+${p.minecraft}") {
+        artifact { name = rinlibJar.name - '.jar'; type = 'jar'; extension = 'jar' }
+    }
+    implementation rinlibEmbedded
+    jarJar rinlibEmbedded
 }

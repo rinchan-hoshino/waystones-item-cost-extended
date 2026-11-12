@@ -12,6 +12,13 @@ configurations {
     commonJava { canBeResolved = true }
     commonResources { canBeResolved = true }
 }
+repositories {
+    flatDir { dirs providers.gradleProperty('rinlibDir').get() }
+}
+def rinlibEmbedded = dependencies.create("dev.rinchan:rinlib-fabric:${rinlib_version}+${minecraft_version}") {
+    artifact { name = "rinlib-${rinlib_version}+${minecraft_version}-fabric"; type = 'jar'; extension = 'jar' }
+}
+
 dependencies {
     commonJava project(path: ':common', configuration: 'commonJava')
     commonResources project(path: ':common', configuration: 'commonResources')
@@ -21,7 +28,8 @@ dependencies {
     implementation files("${profileDependenciesDir}/balm-${profileId}.jar")
     implementation files("${profileDependenciesDir}/waystones-${profileId}.jar")
     implementation files("${profileDependenciesDir}/shogi-${profileId}.jar")
-    implementation files("${providers.gradleProperty('rinlibDir').get()}/rinlib-${rinlib_version}+${minecraft_version}-fabric.jar")
+    implementation rinlibEmbedded
+    include rinlibEmbedded
     compileOnly files("../../build/profile-dependencies/shogi-api-${minecraft_version}-fabric.jar")
 }
 

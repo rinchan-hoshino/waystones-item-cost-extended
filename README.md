@@ -65,10 +65,15 @@ warpRequirements = [
 
 ## Installation requirements
 
-Install the following dependencies:
+Requires [Waystones](https://modrinth.com/mod/waystones). RinLib is bundled inside the jar; no separate install is needed.
 
-- [Waystones](https://modrinth.com/mod/waystones)
-- [RinLib](https://modrinth.com/mod/rinlib)
+## Configuration
+
+Set in `config/waystones-item-cost-extended.properties`; restart the game or server after editing:
+
+| Key | Default | Effect |
+|---|---|---|
+| `recipePayments` | `false` | Lets items linked by reversible compression/decompression recipes pay a cost. |
 
 ## Screenshots
 
