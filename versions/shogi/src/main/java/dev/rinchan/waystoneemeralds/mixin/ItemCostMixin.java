@@ -15,6 +15,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
+// Injects at HEAD of ItemCost.apply, so the item cost is replaced before vanilla applies it.
 @Mixin(ItemCost.class)
 public abstract class ItemCostMixin {
     @Unique private static final AggregateKey<ItemPayment> ITEM_COST_EXTENDED_PAYMENT = AggregateKey.of(

@@ -1,7 +1,0 @@
-modLoader="javafml"
-loaderVersion="[1,)"
-license="GPL-3.0-or-later"
-[[mods]]
-modId="itemcost_probe"
-version="1.0.0"
-displayName="RinLib Runtime Probe"

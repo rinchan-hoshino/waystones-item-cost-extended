@@ -5,8 +5,7 @@
 - Adds optional native Lightmans Currency (1.21-2.3.0.6+) support on Minecraft 1.21.1 NeoForge.
 - Supports all CoinAPI-registered currencies and custom coin chains across isolated denomination hierarchies.
 - Scans equipped native and Curios wallets via WalletHandler, main inventory, hotbar, and occupied offhand coin stacks without accessing bank balances or loose unequipped wallets.
-- Uses native CoinContainerMoneyHandler over pre-mutation snapshots for combined coin and standard item cost previews, committing after checking both inventory and wallet snapshots with all changed touched storage guarded before commit.
-- Native requirement rollback restores touched inventory slots and wallet snapshots once when storage still matches the committed state, never overwriting changed touched slots.
+- Uses native CoinContainerMoneyHandler over pre-mutation snapshots for combined coin and item cost previews. Commits only after checking inventory and wallet snapshots; rollback restores touched slots and wallets once, and only when storage still matches the committed state.
 - Performs native denomination arithmetic honoring wallet auto-exchange settings, rejecting transactions during preview if change cannot fit into wallet or main inventory storage.
 - Preserves creative bypass, zero-cost routes, and recipePayments=false boundaries for reversible crafting conversions.
 

@@ -11,6 +11,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
+// Injects at HEAD of ItemRequirement.canAfford and consume, so the emerald payment is checked at the requirement entry point.
 @Mixin(ItemRequirement.class)
 public abstract class ItemRequirementMixin {
     @Unique private RequirementPayment itemCostExtended$payment;

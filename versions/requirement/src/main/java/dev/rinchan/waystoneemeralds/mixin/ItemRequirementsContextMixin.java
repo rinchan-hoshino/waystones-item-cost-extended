@@ -19,6 +19,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 /** Keeps the native modifier and parser, but gives each currency its own accumulator. */
+// Injects at HEAD of apply and RETURN of resolve on WarpRequirementsContextImpl, so the cost is adjusted before and after vanilla resolves it.
 @Mixin(WarpRequirementsContextImpl.class)
 public abstract class ItemRequirementsContextMixin {
     @Unique private final Map<String, ItemRequirement> itemCostExtended$currencies = new LinkedHashMap<>();

@@ -12,6 +12,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
+// Injects at HEAD of CombinedRequirement.canAfford and consume, so the combined coin and item payment is evaluated before vanilla logic runs.
 @Mixin(CombinedRequirement.class)
 public abstract class PaymentRequirementMixin {
     @Unique private RequirementPayment itemCostExtended$payment;

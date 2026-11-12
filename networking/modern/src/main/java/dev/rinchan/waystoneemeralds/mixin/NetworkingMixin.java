@@ -6,6 +6,7 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+// Injects at TAIL of ModNetworking.initialize.
 @Mixin(ModNetworking.class)
 public abstract class NetworkingMixin {
     @Inject(method="initialize", at=@At("TAIL"), remap=false)

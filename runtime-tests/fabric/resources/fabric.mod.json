@@ -1,1 +1,0 @@
-{"schemaVersion":1,"id":"itemcost_probe","version":"1.0.0","name":"RinLib Runtime Probe","environment":"*","entrypoints":{"main":["dev.rinchan.rinlibprobe.ProbeEntrypoint"]}}
