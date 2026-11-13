@@ -5,11 +5,6 @@ plugins {
 
 rootProject.ext.configurePaidWaystones(project)
 def p = rootProject.ext.profile
-def rinlibDir = providers.gradleProperty('rinlibDir').map { file(it) }.get()
-def rinlibJar = new File(rinlibDir, "rinlib-${rootProject.ext.rinlibVersion}+${p.minecraft}-${p.loader}.jar")
-if (!rinlibJar.exists()) {
-    throw new GradleException("Missing RinLib profile JAR: ${rinlibJar}")
-}
 
 minecraft {
     mappings channel: 'official', version: p.minecraft
@@ -35,26 +30,5 @@ dependencies {
     compileOnly 'org.spongepowered:mixin:0.8.7'
     implementation files(new File(profileDependenciesDir, "balm-${p.id}.jar"))
     implementation files(new File(profileDependenciesDir, "waystones-${p.id}.jar"))
-    implementation files(rinlibJar)
     annotationProcessor 'org.spongepowered:mixin:0.8.7:processor'
-}
-
-// Forge native jar-in-jar: embed RinLib under META-INF/jarjar with a metadata.json the loader reads directly.
-def rinlibJarJarMetadata = tasks.register('generateRinlibJarJarMetadata') {
-    def outDir = layout.buildDirectory.dir('generated/jarjar')
-    def embeddedName = "META-INF/jarjar/${rinlibJar.name}"
-    inputs.property 'embeddedName', embeddedName
-    outputs.dir outDir
-    doLast {
-        def file = new File(outDir.get().asFile, 'META-INF/jarjar/metadata.json')
-        file.parentFile.mkdirs()
-        file.text = '{"jars":[{"identifier":{"group":"dev.rinchan","artifact":"rinlib-forge"},' +
-            '"version":{"range":"[2.0.1,)","artifactVersion":"2.0.1"},' +
-            "\"path\":\"${embeddedName}\",\"isObfuscated\":false}]}"
-    }
-}
-tasks.named('jar') {
-    dependsOn rinlibJarJarMetadata
-    from(rinlibJar) { into 'META-INF/jarjar' }
-    from(layout.buildDirectory.dir('generated/jarjar'))
 }

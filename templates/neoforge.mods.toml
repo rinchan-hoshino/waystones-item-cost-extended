@@ -23,13 +23,6 @@ ordering="NONE"
 side="BOTH"
 
 [[dependencies.waystone_emeralds]]
-modId="rinlib"
-type="required"
-versionRange="[${rinlib_version},)"
-ordering="AFTER"
-side="BOTH"
-
-[[dependencies.waystone_emeralds]]
 modId="waystones"
 type="required"
 versionRange="[${waystones_version},)"

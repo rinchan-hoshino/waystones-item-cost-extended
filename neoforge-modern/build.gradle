@@ -5,11 +5,6 @@ plugins {
 
 rootProject.ext.configurePaidWaystones(project)
 def p = rootProject.ext.profile
-def rinlibDir = providers.gradleProperty('rinlibDir').map { file(it) }.get()
-def rinlibJar = new File(rinlibDir, "rinlib-${rootProject.ext.rinlibVersion}+${p.minecraft}-${p.loader}.jar")
-if (!rinlibJar.exists()) {
-    throw new GradleException("Missing RinLib profile JAR: ${rinlibJar}")
-}
 
 neoForge {
     version = p.loader_version
@@ -31,10 +26,6 @@ neoForge {
 
 def profileDependenciesDir = providers.gradleProperty('profileDependenciesDir').map { file(it) }.get()
 
-repositories {
-    flatDir { dirs rinlibDir }
-}
-
 dependencies {
     if (p.id == '1.21.1-neoforge') {
         compileOnly files(new File(profileDependenciesDir, "lightmanscurrency-${p.id}.jar"))
@@ -45,9 +36,4 @@ dependencies {
         implementation files(new File(profileDependenciesDir, "shogi-${p.id}.jar"))
         compileOnly files(rootProject.file("build/profile-dependencies/shogi-api-${p.id}.jar"))
     }
-    def rinlibEmbedded = dependencies.create("dev.rinchan:rinlib-${p.loader}:${rootProject.ext.rinlibVersion}+${p.minecraft}") {
-        artifact { name = rinlibJar.name - '.jar'; type = 'jar'; extension = 'jar' }
-    }
-    implementation rinlibEmbedded
-    jarJar rinlibEmbedded
 }

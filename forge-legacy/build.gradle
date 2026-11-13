@@ -6,11 +6,6 @@ plugins {
 
 rootProject.ext.configurePaidWaystones(project)
 def p = rootProject.ext.profile
-def rinlibDir = providers.gradleProperty('rinlibDir').map { file(it) }.get()
-def rinlibJar = new File(rinlibDir, "rinlib-${rootProject.ext.rinlibVersion}+${p.minecraft}-${p.loader}.jar")
-if (!rinlibJar.exists()) {
-    throw new GradleException("Missing RinLib profile JAR: ${rinlibJar}")
-}
 
 mixin {
     add sourceSets.main, 'paid_waystones.refmap.json'
@@ -35,19 +30,10 @@ minecraft {
 
 def profileDependenciesDir = providers.gradleProperty('profileDependenciesDir').map { file(it) }.get()
 
-repositories {
-    flatDir { dirs rinlibDir }
-}
-
 dependencies {
     minecraft "net.minecraftforge:forge:${p.minecraft}-${p.loader_version}"
     implementation fg.deobf(files(new File(profileDependenciesDir, "balm-${p.id}.jar")))
     implementation fg.deobf(files(new File(profileDependenciesDir, "waystones-${p.id}.jar")))
-    def rinlibEmbedded = dependencies.create("dev.rinchan:rinlib-${p.loader}:${rootProject.ext.rinlibVersion}+${p.minecraft}") {
-        artifact { name = rinlibJar.name - '.jar'; type = 'jar'; extension = 'jar' }
-    }
-    implementation rinlibEmbedded
-    jarJar rinlibEmbedded
     annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
 }
 

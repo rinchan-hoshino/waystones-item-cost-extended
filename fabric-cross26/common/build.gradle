@@ -18,7 +18,6 @@ dependencies {
     implementation "maven.modrinth:waystones:${waystones_neoforge_version}"
     implementation "maven.modrinth:shogi:26.1.2.8+neoforge-26.1.2"
     implementation files("../../build/profile-dependencies/shogi-api-${minecraft_version}-fabric.jar")
-    implementation files("${providers.gradleProperty('rinlibDir').get()}/rinlib-${rinlib_version}+${minecraft_version}-fabric.jar")
 }
 
 configurations {

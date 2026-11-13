@@ -1,5 +1,4 @@
 ext.profile = gradle.ext.paidWaystonesProfile
-ext.rinlibVersion = new groovy.json.JsonSlurper().parse(file('support/profiles.json')).rinlib_version
 ext.releaseVersion = new groovy.json.JsonSlurper().parse(file('support/profiles.json')).paid_waystones_version
 
 allprojects {
@@ -109,7 +108,6 @@ ext.profileValues = { Map selected ->
         java_version: selected.java,
         waystones_version: waystonesBase,
         balm_version: balmBase,
-        rinlib_version: rinlibVersion,
         shogi_dependency_json: selected.generation == 'shogi' ? ',\n    "shogi": ">=26.1"' : '',
         shogi_dependency_toml: selected.generation == 'shogi' ? """
 [[dependencies.waystone_emeralds]]

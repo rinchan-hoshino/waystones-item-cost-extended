@@ -1,6 +1,6 @@
 package dev.rinchan.waystoneemeralds.payment;
 
-import dev.rinchan.rinlib.payment.DenominatedPayment;
+import dev.rinchan.waystoneemeralds.rinlib.payment.DenominatedPayment;
 import dev.rinchan.waystoneemeralds.minecraft.RecipeCurrencies;
 import java.util.ArrayList;
 import java.util.List;

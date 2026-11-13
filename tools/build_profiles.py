@@ -114,7 +114,7 @@ def snapshot_classpath(profile_id: str, classpath_output: Path) -> Path:
     return audit_list
 
 
-def run_profile(profile, rinlib_dir, reuse_existing=False):
+def run_profile(profile, reuse_existing=False):
     profile_id = profile["id"]
     release_version = json.loads(PROFILES_FILE.read_text())["paid_waystones_version"]
     expected = f"waystones-item-cost-extended-{release_version}+{profile['minecraft']}-{profile['loader']}.jar"
@@ -158,8 +158,6 @@ def run_profile(profile, rinlib_dir, reuse_existing=False):
             f"-Pshogi_fabric_version={profile['shogi']['version_number']}",
             f"-Pgame_versions_json={json.dumps(profile['game_versions'], separators=(',', ':'))}",
             f"-Pmod_version={release_version}",
-            f"-Prinlib_version={json.loads(PROFILES_FILE.read_text())['rinlib_version']}",
-            f"-PrinlibDir={rinlib_dir}",
             f"-PprofileDependenciesDir={profile_dependencies}",
             f"-PprofileId={profile_id}",
         ]
@@ -179,8 +177,6 @@ def run_profile(profile, rinlib_dir, reuse_existing=False):
             f"-Pbalm_neoforge_version={neo['balm']['version_number']}",
             f"-Pgame_versions_json={json.dumps(profile['game_versions'], separators=(',', ':'))}",
             f"-Pmod_version={release_version}",
-            f"-Prinlib_version={json.loads(PROFILES_FILE.read_text())['rinlib_version']}",
-            f"-PrinlibDir={rinlib_dir}",
             f"-PprofileDependenciesDir={profile_dependencies}",
             f"-PprofileId={profile_id}",
         ]
@@ -205,8 +201,6 @@ def run_profile(profile, rinlib_dir, reuse_existing=False):
             f"-Pjava_version={profile['java']}",
             f"-Pgame_versions_json={json.dumps(profile['game_versions'], separators=(',', ':'))}",
             f"-Pmod_version={release_version}",
-            f"-Prinlib_version={json.loads(PROFILES_FILE.read_text())['rinlib_version']}",
-            f"-PrinlibDir={rinlib_dir}",
             f"-PprofileDependenciesDir={profile_dependencies}",
         ]
         if profile["generation"] == "shogi":
@@ -218,7 +212,6 @@ def run_profile(profile, rinlib_dir, reuse_existing=False):
         command = [
             str(gradle), "--no-daemon", "--no-configuration-cache",
             f"-Pprofile={profile_id}",
-            f"-PrinlibDir={rinlib_dir}",
             f"-PprofileDependenciesDir={profile_dependencies}",
             f":{module}:clean", f":{module}:jar",
         ]
@@ -262,7 +255,6 @@ def run_profile(profile, rinlib_dir, reuse_existing=False):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--profile", action="append")
-    parser.add_argument("--rinlib-dir", type=Path, required=True)
     parser.add_argument("--reuse-existing", action="store_true", help="Reuse already-built artifacts only after the source tree is frozen")
     args = parser.parse_args()
     verify_locked_maven()
@@ -275,7 +267,7 @@ def main():
         if missing:
             raise SystemExit(f"Unknown profiles: {sorted(missing)}")
     for profile in profiles:
-        run_profile(profile, args.rinlib_dir.resolve(), args.reuse_existing)
+        run_profile(profile, args.reuse_existing)
     from source_archive import build_archive
     source = DIST / f"waystones-item-cost-extended-{data['paid_waystones_version']}-sources.jar"
     print(json.dumps(build_archive(ROOT, source), sort_keys=True), flush=True)

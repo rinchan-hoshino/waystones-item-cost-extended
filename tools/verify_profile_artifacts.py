@@ -62,7 +62,6 @@ def verify_fabric(metadata: dict[str, object], profile: dict[str, object]) -> No
         "fabricloader": ">=0.15.0",
         "minecraft": profile["game_versions"],
         "java": f">={profile['java']}",
-        "rinlib": ">=" + MATRIX["rinlib_version"],
         "waystones": f">={profile['waystones']['version_number'].split('+')[0]}",
         "balm-fabric": f">={profile['balm']['version_number'].split('+')[0]}",
     }
@@ -81,7 +80,7 @@ def verify_toml(metadata: dict[str, object], profile: dict[str, object]) -> None
     if not isinstance(dependencies, list):
         raise AssertionError("missing TOML dependencies")
     by_id = {item["modId"]: item for item in dependencies}
-    expected_ids = {"minecraft", "rinlib", "waystones", "balm"}
+    expected_ids = {"minecraft", "waystones", "balm"}
     if profile["loader"] == "neoforge":
         expected_ids.add("neoforge")
     if profile["generation"] == "shogi":
@@ -92,7 +91,6 @@ def verify_toml(metadata: dict[str, object], profile: dict[str, object]) -> None
         raise AssertionError(f"dependency IDs {sorted(by_id)} != {sorted(expected_ids)}")
     expected_ranges = {
         "minecraft": minecraft_range(profile["game_versions"]),
-        "rinlib": "[" + MATRIX["rinlib_version"] + ",)",
         "waystones": f"[{profile['waystones']['version_number'].split('+')[0]},)",
         "balm": f"[{profile['balm']['version_number'].split('+')[0]},)",
     }
