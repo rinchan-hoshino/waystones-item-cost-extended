@@ -28,7 +28,7 @@ minecraft {
     }
 }
 
-def profileDependenciesDir = providers.gradleProperty('profileDependenciesDir').map { file(it) }.get()
+def profileDependenciesDir = rootProject.ext.ensureProfileDependencies(p)
 
 dependencies {
     minecraft "net.minecraftforge:forge:${p.minecraft}-${p.loader_version}"

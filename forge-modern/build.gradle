@@ -23,7 +23,7 @@ repositories {
 }
 
 def forgeCoordinates = "${p.minecraft}-${p.loader_version}"
-def profileDependenciesDir = providers.gradleProperty('profileDependenciesDir').map { file(it) }.get()
+def profileDependenciesDir = rootProject.ext.ensureProfileDependencies(p)
 
 dependencies {
     implementation minecraft.dependency("net.minecraftforge:forge:${forgeCoordinates}")

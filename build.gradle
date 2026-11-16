@@ -1,6 +1,66 @@
 ext.profile = gradle.ext.paidWaystonesProfile
 ext.releaseVersion = new groovy.json.JsonSlurper().parse(file('support/profiles.json')).paid_waystones_version
 
+ext.ensureProfileDependencies = { Map selected ->
+    def dir = providers.gradleProperty('profileDependenciesDir')
+        .map { file(it) }
+        .orElse(rootProject.file('build/profile-dependencies'))
+        .get()
+    dir.mkdirs()
+    def downloadWithSha512 = { String url, File target, String expectedSha512 ->
+        def sha512 = { File f ->
+            def md = java.security.MessageDigest.getInstance('SHA-512')
+            f.withInputStream { is ->
+                byte[] buf = new byte[8192]
+                int read
+                while ((read = is.read(buf)) != -1) {
+                    md.update(buf, 0, read)
+                }
+            }
+            md.digest().encodeHex().toString()
+        }
+        if (target.exists() && sha512(target) == expectedSha512) {
+            return
+        }
+        new URL(url).withInputStream { input ->
+            target.withOutputStream { output -> output << input }
+        }
+        if (sha512(target) != expectedSha512) {
+            target.delete()
+            throw new GradleException("SHA-512 mismatch for ${url}")
+        }
+    }
+    def depNames = ['waystones', 'balm']
+    if (selected.containsKey('lightmanscurrency')) {
+        depNames << 'lightmanscurrency'
+    }
+    depNames.each { depName ->
+        def dep = selected[depName]
+        downloadWithSha512(dep.url as String, new File(dir, "${depName}-${selected.id}.jar"), dep.sha512 as String)
+    }
+    if (selected.generation == 'shogi') {
+        def shogi = selected.shogi
+        def platformJar = new File(dir, "shogi-${selected.id}.jar")
+        downloadWithSha512(shogi.url as String, platformJar, shogi.sha512 as String)
+        def apiJar = new File(dir, "shogi-api-${selected.id}.jar")
+        if (!apiJar.exists()) {
+            def zip = new java.util.zip.ZipFile(platformJar)
+            try {
+                def entry = zip.entries().find { !it.directory && it.name.startsWith('META-INF/') && it.name.contains('shogi-api-') && it.name.endsWith('.jar') }
+                if (entry == null) {
+                    throw new GradleException("Expected nested Shogi API JAR in ${platformJar}")
+                }
+                zip.getInputStream(entry).withStream { input ->
+                    apiJar.withOutputStream { output -> output << input }
+                }
+            } finally {
+                zip.close()
+            }
+        }
+    }
+    dir
+}
+
 allprojects {
     repositories {
         maven {
