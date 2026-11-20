@@ -31,6 +31,14 @@ detect_jdk() {
         echo "/opt/java/temurin-${ver}"
         return 0
     fi
+    if [[ -x "/opt/homebrew/opt/openjdk@${ver}/libexec/openjdk.jdk/Contents/Home/bin/java" ]]; then
+        echo "/opt/homebrew/opt/openjdk@${ver}/libexec/openjdk.jdk/Contents/Home"
+        return 0
+    fi
+    if [[ -x "/Users/rin/Library/Java/JavaVirtualMachines/temurin-${ver}.jdk/Contents/Home/bin/java" ]]; then
+        echo "/Users/rin/Library/Java/JavaVirtualMachines/temurin-${ver}.jdk/Contents/Home"
+        return 0
+    fi
     if [[ -x "/usr/libexec/java_home" ]]; then
         local mac_home
         if mac_home="$(/usr/libexec/java_home -v "$ver" 2>/dev/null)" && [[ -x "${mac_home}/bin/java" ]]; then
@@ -76,7 +84,9 @@ run_container() {
     echo "=== Running full verification suite inside container ==="
     "$runtime" run --rm --init \
         -v "${REPO_ROOT}:/workspace" \
-        -v "rinchan-gradle-cache:/root/.gradle" \
+        -v "rinchan-gradle-cache-wice:/root/.gradle" \
+        -e ORG_GRADLE_PROJECT_neoform_decompile_maxMemory=2g \
+        -e GRADLE_OPTS="-Dorg.gradle.jvmargs=-Xmx2560m" \
         -w /workspace \
         "$image" \
         bash scripts/verify.sh --native

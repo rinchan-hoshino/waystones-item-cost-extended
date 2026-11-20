@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.0.1
+
+- **Dedicated Server isolation**: Separated client-only initialization (`WaystonesItemCostForgeMod$ClientInit` and `WaystonesItemCostNeoForgeMod$ClientInit`) into dedicated client classes so dedicated servers never load client GUI or screen classes.
+- **Verification**: Validated across the 8-target build matrix, unit/property tests, packaged-JAR architecture contracts, and real Minecraft 1.21.1 NeoForge GameTest E2E.
+
 ## 2.0.0
 
 ### Core Architecture & Platform Support
