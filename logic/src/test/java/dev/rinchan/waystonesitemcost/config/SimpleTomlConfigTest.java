@@ -17,6 +17,7 @@ final class SimpleTomlConfigTest {
         assertTrue(defaults.recipePayments());
         assertTrue(defaults.searchNestedContainers());
         assertTrue(defaults.showPaymentPreviewTooltip());
+        assertTrue(defaults.fixPhysicsShipDistance());
         assertFalse(defaults.legacyEnableCustomItemCosts());
         assertFalse(defaults.legacyWaiveVanillaXpCost());
         assertEquals(1, defaults.legacyItemCosts().size());
@@ -28,6 +29,7 @@ final class SimpleTomlConfigTest {
         var original = new PaymentConfig.Data(
             false,
             true,
+            false,
             false,
             true,
             true,
@@ -52,14 +54,16 @@ final class SimpleTomlConfigTest {
         assertFalse(loaded.recipePayments());
         assertTrue(loaded.searchNestedContainers());
         assertTrue(loaded.showPaymentPreviewTooltip());
+        assertTrue(loaded.fixPhysicsShipDistance());
         assertTrue(Files.exists(tempDir.resolve(PaymentConfig.TOML_FILENAME)));
         assertFalse(Files.exists(legacyProps));
         assertTrue(Files.exists(tempDir.resolve(PaymentConfig.LEGACY_BACKUP_FILENAME)));
 
         // Hot-save updates immediately
-        PaymentConfig.save(new PaymentConfig.Data(true, false, true, false, false, loaded.legacyItemCosts()));
+        PaymentConfig.save(new PaymentConfig.Data(true, false, true, false, false, false, loaded.legacyItemCosts()));
         assertTrue(PaymentConfig.recipePayments());
         assertFalse(PaymentConfig.searchNestedContainers());
+        assertFalse(PaymentConfig.fixPhysicsShipDistance());
 
         // Reload from disk matches saved values
         PaymentConfig.reload();

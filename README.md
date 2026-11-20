@@ -64,11 +64,14 @@ Format: `"item_id,base_count,per_km_extra,cross_dim_extra"`. Uses the exact same
 - **Optional Lightman's Currency Integration**:
   - Supported on **1.20.1 (Forge)**, **1.21.1 (NeoForge)**, and **26.1.2 (NeoForge)** (soft-skipped on Fabric where Lightman's API differs).
   - Automatically activates when Lightman's Currency is installed. Supports all registered coin chains and equipped wallets alongside hotbar/main/offhand coins; bank accounts and loose inventory wallets are never touched.
+- **Physics Airship / Train / Ship Real-World Distance Support** (`fixPhysicsShipDistance = true` by default):
+  - Automatically resolves real-world coordinates for Waystones placed on **Sable** (`Create: Aeronautics` / `Simurail`) and **Valkyrien Skies 2** sub-worlds via zero-dependency soft reflection.
+  - Persists last-known real-world coordinates in server `SavedData` (surviving unloaded ships) and syncs them to clients on login & menu open so out-of-view ships never show astronomical `28960km` costs or locked buttons.
 - **4 Languages Included**: English (`en_us`), Simplified Chinese (`zh_cn`), Traditional Chinese (`zh_tw`), and Japanese (`ja_jp`).
 
 ---
 
-## Supported Matrix (2.0.0)
+## Supported Matrix (2.1.0)
 
 | Minecraft | Loaders | Waystones Generation | Lightman's Currency |
 |---|---|---|---|
@@ -86,6 +89,7 @@ Format: `"item_id,base_count,per_km_extra,cross_dim_extra"`. Uses the exact same
 | `recipePayments` | `true` | Allow reversible crafting denominations and greedy change. |
 | `searchNestedContainers` | `true` | Deduct payment items from Bundles and Shulker Boxes in inventory. |
 | `showPaymentPreviewTooltip` | `true` | Show payment/change/wallet breakdown and full-inventory warnings on Waystones tooltips. |
+| `fixPhysicsShipDistance` | `true` | Resolve real-world coordinates for Waystones on Sable (Create: Aeronautics / Simurail) & Valkyrien Skies 2 ships, including unloaded and out-of-view ships. |
 | `[legacy_1_20_1].enableCustomItemCosts` | `false` | *(1.20.1 only)* Enable custom item costs via Waystones teleport events. |
 | `[legacy_1_20_1].waiveVanillaXpCost` | `false` | *(1.20.1 only)* Waive Waystones' vanilla XP cost when custom item costs are enabled. |
 | `[legacy_1_20_1].itemCosts` | `["minecraft:emerald,1,0,0"]` | *(1.20.1 only)* List of `"item_id,base,per_km,cross_dim"` cost rules. |

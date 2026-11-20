@@ -6,9 +6,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import net.blay09.mods.waystones.api.Waystone;
+import net.blay09.mods.waystones.api.WaystoneOrigin;
 import net.blay09.mods.waystones.api.WaystoneStyles;
 import net.blay09.mods.waystones.api.WaystonesAPI;
 import net.blay09.mods.waystones.config.WaystonesConfig;
+import net.blay09.mods.waystones.core.WaystoneImpl;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.component.DataComponents;
@@ -17,6 +19,9 @@ import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.TextColor;
 import net.minecraft.network.chat.contents.TranslatableContents;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.Item;
@@ -25,6 +30,7 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.item.component.BundleContents;
 import net.minecraft.world.item.component.ItemContainerContents;
 import net.minecraft.world.level.GameType;
+import net.minecraft.world.level.Level;
 import net.neoforged.fml.ModList;
 import net.neoforged.neoforge.common.util.FakePlayer;
 import net.neoforged.neoforge.gametest.GameTestHolder;
@@ -272,6 +278,80 @@ public final class WicePackagedJarGameTests {
             "9 iron nuggets should be consumed for 1 iron ingot cost");
         helper.assertTrue(countInMainInventory(player.getInventory(), Items.EMERALD) == 7,
             "Expected 7 emerald change");
+        helper.succeed();
+    }
+
+    @GameTest(template = TEMPLATE)
+    public static void physicsAirshipWaystoneChargesRealWorldDistanceNotPlotDistance(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        var pair = placeTwoWaystones(helper);
+        var player = createPlayerAtSource(helper, pair, "E2EPhysicsShip");
+        player.setPos(0.5, 70.0, 0.5);
+
+        // Simulated Sable/VS2 airship Waystone stored in remote Plot coordinates (~28,963,235 blocks away)
+        UUID shipWaystoneUid = UUID.randomUUID();
+        Waystone shipWaystone = new WaystoneImpl(
+            ResourceLocation.fromNamespaceAndPath("waystones", "waystone"),
+            shipWaystoneUid,
+            level.dimension(),
+            new BlockPos(20_480_100, 70, 20_480_100),
+            WaystoneOrigin.PLAYER,
+            player.getUUID()
+        );
+
+        // Register its known real-world ship coordinate (120, 70, -80) (~144 blocks from player) via packaged JAR API
+        try {
+            Class<?> resolverClass = Class.forName("dev.rinchan.waystonesitemcost.physics.PhysicsPosResolver");
+            Method recordMethod = resolverClass.getMethod(
+                "recordServerPosition",
+                MinecraftServer.class, UUID.class, ResourceKey.class, double.class, double.class, double.class
+            );
+            recordMethod.invoke(null, level.getServer(), shipWaystoneUid, level.dimension(), 120.0, 70.0, -80.0);
+        } catch (ReflectiveOperationException e) {
+            throw new AssertionError("Failed to invoke PhysicsPosResolver.recordServerPosition in packaged JAR", e);
+        }
+
+        // Player holds 1 Emerald Block (9 emeralds) - enough for ~144-block fee, nowhere near 28.96M-block fee!
+        player.getInventory().setItem(0, new ItemStack(Items.EMERALD_BLOCK, 1));
+
+        var teleports = WaystonesConfig.getActive().teleports;
+        boolean prevEnableCosts = teleports.enableCosts;
+        boolean prevEnableCooldowns = teleports.enableCooldowns;
+        List<String> prevRequirements = teleports.warpRequirements;
+        try {
+            teleports.enableCosts = true;
+            teleports.enableCooldowns = false;
+            teleports.warpRequirements = new ArrayList<>(List.of(
+                "add_item_cost(minecraft:emerald, 1)",
+                "scaled_add_item_cost(distance, minecraft:emerald, 0.01)",
+                "[is_not_within_distance(500)] add_item_cost(minecraft:emerald, 9999)"
+            ));
+
+            var ctxEither = WaystonesAPI.createUncheckedDefaultTeleportContext(
+                player,
+                shipWaystone,
+                ctx -> ctx.setFromWaystone(pair.source())
+            );
+            var ctx = ctxEither.left().orElseThrow(() ->
+                new AssertionError("Failed to create teleport context for physics ship waystone: " + ctxEither.right()));
+
+            var requirement = WaystonesAPI.resolveRequirements(ctx);
+            helper.assertTrue(requirement.canAfford(player),
+                "Physics airship Waystone at Plot (20480100,70,20480100) with real-world (120,70,-80) must be affordable with 1 emerald block (real ~144-block fee, NOT 28.96M plot fee!)");
+
+            requirement.consume(player);
+            int blocksLeft = countInMainInventory(player.getInventory(), Items.EMERALD_BLOCK);
+            int emeraldsLeft = countInMainInventory(player.getInventory(), Items.EMERALD);
+            int totalValueLeft = blocksLeft * 9 + emeraldsLeft;
+            int totalPaid = 9 - totalValueLeft;
+            helper.assertTrue(totalPaid >= 1 && totalPaid <= 4,
+                "Expected realistic near-distance fee of 1..4 emeralds for ~144 blocks, but paid " + totalPaid
+                    + " (blocksLeft=" + blocksLeft + ", emeraldsLeft=" + emeraldsLeft + ")");
+        } finally {
+            teleports.enableCosts = prevEnableCosts;
+            teleports.enableCooldowns = prevEnableCooldowns;
+            teleports.warpRequirements = prevRequirements;
+        }
         helper.succeed();
     }
 }

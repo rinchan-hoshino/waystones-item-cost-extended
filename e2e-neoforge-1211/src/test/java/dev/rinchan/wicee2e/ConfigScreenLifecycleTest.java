@@ -30,8 +30,8 @@ final class ConfigScreenLifecycleTest {
         initMethod.invoke(screen);
 
         List<?> widgets = screen.children();
-        assertEquals(6, widgets.size(),
-            "Expected 6 widgets (3 CycleButtons + Copy Example + Done + Cancel) in WaystonesItemCostConfigScreen");
+        assertEquals(7, widgets.size(),
+            "Expected 7 widgets (4 CycleButtons + Copy Example + Done + Cancel) in WaystonesItemCostConfigScreen");
 
         screen.onClose();
     }

@@ -11,6 +11,7 @@
   "screen.waystones_item_cost_extended.config.recipe_payments": "可逆クラフトによる自動両替とお釣り",
   "screen.waystones_item_cost_extended.config.search_nested": "バンドル・シュルカーボックスから支払い",
   "screen.waystones_item_cost_extended.config.show_tooltip": "支払い内訳・お釣りツールチップ表示",
+  "screen.waystones_item_cost_extended.config.fix_physics_ship_distance": "物理飛行船・列車ウェイストーン距離補正",
   "screen.waystones_item_cost_extended.config.legacy_enable": "1.20.1 カスタムアイテムコスト",
   "screen.waystones_item_cost_extended.config.legacy_waive_xp": "1.20.1 バニラ経験値コストを免除",
   "screen.waystones_item_cost_extended.config.copy_example": "エメラルドコスト設定例をコピー",

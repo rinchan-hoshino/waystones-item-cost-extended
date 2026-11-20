@@ -1,6 +1,7 @@
 package dev.rinchan.waystonesitemcost.mixin;
 
 import dev.rinchan.waystonesitemcost.MixinGuard;
+import dev.rinchan.waystonesitemcost.network.PhysicsPosSync;
 import dev.rinchan.waystonesitemcost.network.RecipeSync;
 import net.blay09.mods.balm.network.BalmNetworking;
 import net.blay09.mods.waystones.network.ModNetworking;
@@ -15,6 +16,7 @@ public abstract class NetworkingMixin {
     private static void itemCostExtended$registerPackets(BalmNetworking networking, CallbackInfo callback) {
         try {
             RecipeSync.register(networking);
+            PhysicsPosSync.register(networking);
         } catch (Throwable t) {
             MixinGuard.logOnce("ModNetworking.initialize", t);
         }

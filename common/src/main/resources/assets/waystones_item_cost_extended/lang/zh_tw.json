@@ -11,6 +11,7 @@
   "screen.waystones_item_cost_extended.config.recipe_payments": "可逆合成多面額支付與找零",
   "screen.waystones_item_cost_extended.config.search_nested": "檢索收納袋與界伏盒扣款",
   "screen.waystones_item_cost_extended.config.show_tooltip": "顯示消耗預覽與找零提示",
+  "screen.waystones_item_cost_extended.config.fix_physics_ship_distance": "修正物理飛艇/列車路石真實距離",
   "screen.waystones_item_cost_extended.config.legacy_enable": "1.20.1 自訂物品消耗",
   "screen.waystones_item_cost_extended.config.legacy_waive_xp": "1.20.1 免除原版經驗消耗",
   "screen.waystones_item_cost_extended.config.copy_example": "複製綠寶石消耗設定範例",

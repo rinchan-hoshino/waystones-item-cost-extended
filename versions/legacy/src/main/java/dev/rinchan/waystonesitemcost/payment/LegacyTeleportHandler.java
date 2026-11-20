@@ -5,6 +5,7 @@ import dev.rinchan.waystonesitemcost.config.LegacyCostEntry;
 import dev.rinchan.waystonesitemcost.config.PaymentConfig;
 import dev.rinchan.waystonesitemcost.minecraft.PaymentTooltipHelper;
 import dev.rinchan.waystonesitemcost.minecraft.RecipeCurrencies;
+import dev.rinchan.waystonesitemcost.physics.PhysicsPosResolver;
 import java.util.ArrayList;
 import java.util.List;
 import net.blay09.mods.balm.api.Balm;
@@ -37,7 +38,9 @@ public final class LegacyTeleportHandler {
             return List.of();
         }
         boolean crossDim = !player.level().dimension().equals(target.getDimension());
-        double distance = crossDim ? 0.0 : Math.sqrt(player.blockPosition().distSqr(target.getPos()));
+        double distance = crossDim
+            ? 0.0
+            : PhysicsPosResolver.resolveDistance(player, target.getWaystoneUid(), target.getDimension(), target.getPos());
         var out = new ArrayList<ResolvedCost>();
         for (LegacyCostEntry entry : PaymentConfig.legacyItemCosts()) {
             int qty = entry.calculateCost(distance, crossDim);

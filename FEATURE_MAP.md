@@ -1,15 +1,16 @@
-# Feature Map — Waystones Item Cost Extended 2.0.0
+# Feature Map — Waystones Item Cost Extended 2.1.0
 
 ## 1. Module & Package Architecture (`dev.rinchan.waystonesitemcost`)
 
 | Layer | Directory | Responsibility |
 |---|---|---|
 | Pure Payment Engine | `common/.../payment/` | `DenominatedPayment`, `CraftingDenominations`, `ChangeSlotPlanner`, `PaymentStatus`, `ItemPayment`, `CurrencyPayment` |
-| Configuration | `common/.../config/` | `SimpleToml`, `LegacyCostEntry`, `PaymentConfig` (TOML + `.properties` auto-migration + hot-save), `WaystonesRuleDetector` |
+| Physics Sub-World Resolver | `common/.../physics/` | `PhysicsPosCore` (pure distance/fallback kernel), `PhysicsModBridge` (zero-dep Sable & VS2 `MethodHandle` bridge), `PhysicsPosResolver` |
+| Configuration | `common/.../config/` | `SimpleToml`, `LegacyCostEntry`, `PaymentConfig` (TOML + hot-save), `WaystonesRuleDetector` |
 | Minecraft Helpers | `common/.../minecraft/` | `RecipeCurrencies`, `PaymentTooltipHelper`, `MixinGuard` |
-| Version Adapters | `adapters/{1.20.1,1.21.1,26}/` | `RecipeAccess` (recipe reading, Bundle/Shulker nested container I/O, config snippets), `WaystonesItemCostConfigScreen` |
-| Networking | `networking/{1.20.1,1.21.1,26}/` | `RecipeSync` (Server → Client reversible recipe sync across all 8 targets) & `NetworkingMixin` |
-| Waystones Generations | `versions/{legacy,requirement,shogi}/` | `legacy` (1.20.1 event + button), `requirement` (1.21.1 combined/item mixins + tooltips), `shogi` (26.x `ItemCost` + renderer tooltip) |
+| Version Adapters | `adapters/{1.20.1,1.21.1,26}/` | `RecipeAccess` (recipe reading, Bundle/Shulker nested container I/O, config snippets), `PhysicsPosStorage` (server `SavedData`), `WaystonesItemCostConfigScreen` |
+| Networking | `networking/{1.20.1,1.21.1,26}/` | `RecipeSync`, `PhysicsPosSync` (Server → Client sync across all 8 targets) & `NetworkingMixin` |
+| Waystones Generations | `versions/{legacy,requirement,shogi}/` | `legacy` (1.20.1 event, XP distance, menu sync & button), `requirement` (1.21.1 combined/item/distance mixins & tooltips), `shogi` (26.x `ItemCost`, distance/comparator/button mixins & tooltips) |
 | Optional Compat | `compat/{none,lightman-1.20.1,lightman-1.21.1,lightman-26.1}/` | Native Lightman's Currency coin & wallet payment integration (soft-loaded via `ModList`) |
 | Loader Entrypoints | `loaders/{fabric,fabric-modmenu-stub,forge-1.20.1,neoforge}/` | Mod Menu compile-only stub + Forge/NeoForge native Config Screen factories |
 | Verification | `logic/`, `e2e-neoforge-1211/`, `scripts/` | JUnit 5 unit + 2,500-round property invariant bombardment, `ArchitectureContractTest`, 8-target JAR build matrix, and packaged-JAR 1.21.1 NeoForge E2E GameTest + ConfigScreen lifecycle suite |
@@ -31,13 +32,20 @@
 
 | Mixin | Scope | Target | Purpose |
 |---|---|---|---|
-| `NetworkingMixin` | All 8 | `ModNetworking.initialize` | Register `RecipeSync` packet (and `LegacyTeleportHandler` on 1.20.1) |
+| `NetworkingMixin` | All 8 | `ModNetworking.initialize` | Register `RecipeSync` & `PhysicsPosSync` packets (and `LegacyTeleportHandler` on 1.20.1) |
+| `LegacyPhysicsDistanceMixin` | 1.20.1 | `PlayerWaystoneManager.getExperienceLevelCost` | Resolve physics ship real-world distance for vanilla XP cost |
+| `LegacyWaystoneMenuSyncMixin` | 1.20.1 | `WaystoneSelectionMenu.createWaystoneSelection` | Refresh & sync physics Waystone positions before menu open |
 | `ItemRequirementsContextMixin` | 1.21.1 | `WarpRequirementsContextImpl.apply/resolve` | Bucket multiple `waystones:item` costs into `CombinedRequirement` |
 | `ItemRequirementMixin` | 1.21.1 | `ItemRequirement.canAfford/consume/rollback` | Route single item requirements through `RequirementPayment` |
 | `PaymentRequirementMixin` | 1.21.1 | `CombinedRequirement.canAfford/consume/rollback` | Atomic multi-item transaction with rollback |
+| `PhysicsRequirementDistanceMixin` | 1.21.1 | `RequirementRegistry.registerDefaults` | Override `distance` & `is_within_distance` with physics real-world distance |
+| `PhysicsDistanceComparatorMixin` | 1.21.1, 26.x | `DistanceToPlayerComparator.compare` | Sort Waystones by real-world physics distance |
 | `ItemRequirementTooltipMixin` | 1.21.1 (client) | `ItemRequirement.appendHoverText` | Payment/change/wallet/container breakdown & full-inventory warning |
 | `CombinedRequirementTooltipMixin` | 1.21.1 (client) | `CombinedRequirement.appendHoverText` | Combined full-inventory-for-change warning |
+| `PhysicsWaystoneButtonMixin` | 1.21.1, 26.x (client) | `WaystoneButton.renderDistance` | Render real-world distance for physics ship Waystones |
 | `ItemCostMixin` | 26.1.2, 26.2 | `ItemCost.apply` | Stateful aggregate `ItemPayment` for Shogi item costs |
+| `PhysicsTeleportContextMixin` | 26.1.2, 26.2 | `WaystoneTeleportContextImpl.getVariable` | Override `"distance"` variable with physics real-world distance |
+| `PhysicsIsWithinDistanceMixin` | 26.1.2, 26.2 | `IsWithinDistance.apply` | Evaluate `is_within_distance` using physics real-world distance |
 | `ShogiItemTooltipMixin` | 26.1.2, 26.2 (client) | `ItemRequirementRenderer.appendHoverText` | Payment/change/wallet/container breakdown & full-inventory warning |
 | `LegacyWaystoneButtonMixin` | 1.20.1 (client) | `WaystoneButton.renderWidget` | Custom item cost icon, count, and hover preview tooltip |
 

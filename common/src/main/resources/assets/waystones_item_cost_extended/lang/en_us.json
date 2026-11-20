@@ -11,6 +11,7 @@
   "screen.waystones_item_cost_extended.config.recipe_payments": "Reversible Recipe Denominations",
   "screen.waystones_item_cost_extended.config.search_nested": "Search Nested Containers (Bundles / Shulkers)",
   "screen.waystones_item_cost_extended.config.show_tooltip": "Payment Preview Tooltip",
+  "screen.waystones_item_cost_extended.config.fix_physics_ship_distance": "Fix Physics Ship / Airship Distance",
   "screen.waystones_item_cost_extended.config.legacy_enable": "1.20.1 Custom Item Costs",
   "screen.waystones_item_cost_extended.config.legacy_waive_xp": "1.20.1 Waive Vanilla XP Cost",
   "screen.waystones_item_cost_extended.config.copy_example": "Copy Emerald Cost Config Example",

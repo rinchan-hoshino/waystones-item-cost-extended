@@ -16,6 +16,7 @@ public final class WaystonesItemCostConfigScreen extends Screen {
     private boolean recipePayments;
     private boolean searchNested;
     private boolean showTooltip;
+    private boolean fixPhysicsShipDistance;
     private long copiedUntilMs;
 
     public WaystonesItemCostConfigScreen(Screen parent) {
@@ -25,6 +26,7 @@ public final class WaystonesItemCostConfigScreen extends Screen {
         this.recipePayments = data.recipePayments();
         this.searchNested = data.searchNestedContainers();
         this.showTooltip = data.showPaymentPreviewTooltip();
+        this.fixPhysicsShipDistance = data.fixPhysicsShipDistance();
     }
 
     @Override
@@ -32,22 +34,27 @@ public final class WaystonesItemCostConfigScreen extends Screen {
         int centerX = this.width / 2;
         int w = 240;
         int x = centerX - w / 2;
-        int y = 60;
+        int y = 56;
 
         addRenderableWidget(CycleButton.onOffBuilder(recipePayments)
             .create(x, y, w, 20, Component.translatable("screen.waystones_item_cost_extended.config.recipe_payments"),
                 (btn, val) -> recipePayments = val));
-        y += 26;
+        y += 24;
 
         addRenderableWidget(CycleButton.onOffBuilder(searchNested)
             .create(x, y, w, 20, Component.translatable("screen.waystones_item_cost_extended.config.search_nested"),
                 (btn, val) -> searchNested = val));
-        y += 26;
+        y += 24;
 
         addRenderableWidget(CycleButton.onOffBuilder(showTooltip)
             .create(x, y, w, 20, Component.translatable("screen.waystones_item_cost_extended.config.show_tooltip"),
                 (btn, val) -> showTooltip = val));
-        y += 32;
+        y += 24;
+
+        addRenderableWidget(CycleButton.onOffBuilder(fixPhysicsShipDistance)
+            .create(x, y, w, 20, Component.translatable("screen.waystones_item_cost_extended.config.fix_physics_ship_distance"),
+                (btn, val) -> fixPhysicsShipDistance = val));
+        y += 28;
 
         addRenderableWidget(Button.builder(
                 Component.translatable("screen.waystones_item_cost_extended.config.copy_example"),
@@ -75,6 +82,7 @@ public final class WaystonesItemCostConfigScreen extends Screen {
             recipePayments,
             searchNested,
             showTooltip,
+            fixPhysicsShipDistance,
             existing.legacyEnableCustomItemCosts(),
             existing.legacyWaiveVanillaXpCost(),
             existing.legacyItemCosts()

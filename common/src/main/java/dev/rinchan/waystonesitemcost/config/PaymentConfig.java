@@ -28,12 +28,14 @@ public final class PaymentConfig {
         boolean recipePayments,
         boolean searchNestedContainers,
         boolean showPaymentPreviewTooltip,
+        boolean fixPhysicsShipDistance,
         boolean legacyEnableCustomItemCosts,
         boolean legacyWaiveVanillaXpCost,
         List<LegacyCostEntry> legacyItemCosts
     ) {
         public static Data defaults() {
             return new Data(
+                true,
                 true,
                 true,
                 true,
@@ -85,6 +87,10 @@ public final class PaymentConfig {
         return get().showPaymentPreviewTooltip();
     }
 
+    public static boolean fixPhysicsShipDistance() {
+        return get().fixPhysicsShipDistance();
+    }
+
     public static boolean legacyEnableCustomItemCosts() {
         return get().legacyEnableCustomItemCosts();
     }
@@ -116,6 +122,7 @@ public final class PaymentConfig {
                     migratedRecipePayments,
                     defaults.searchNestedContainers(),
                     defaults.showPaymentPreviewTooltip(),
+                    defaults.fixPhysicsShipDistance(),
                     defaults.legacyEnableCustomItemCosts(),
                     defaults.legacyWaiveVanillaXpCost(),
                     defaults.legacyItemCosts()
@@ -138,6 +145,7 @@ public final class PaymentConfig {
         boolean recipePayments = toml.getBoolean("recipePayments", defaults.recipePayments());
         boolean searchNested = toml.getBoolean("searchNestedContainers", defaults.searchNestedContainers());
         boolean showTooltip = toml.getBoolean("showPaymentPreviewTooltip", defaults.showPaymentPreviewTooltip());
+        boolean fixPhysics = toml.getBoolean("fixPhysicsShipDistance", defaults.fixPhysicsShipDistance());
         boolean legacyEnable = toml.getBoolean("legacy_1_20_1.enableCustomItemCosts", defaults.legacyEnableCustomItemCosts());
         boolean legacyWaiveXp = toml.getBoolean("legacy_1_20_1.waiveVanillaXpCost", defaults.legacyWaiveVanillaXpCost());
 
@@ -152,12 +160,12 @@ public final class PaymentConfig {
         } else {
             entries = defaults.legacyItemCosts();
         }
-        return new Data(recipePayments, searchNested, showTooltip, legacyEnable, legacyWaiveXp, entries);
+        return new Data(recipePayments, searchNested, showTooltip, fixPhysics, legacyEnable, legacyWaiveXp, entries);
     }
 
     public static String renderToml(Data data) {
         var sb = new StringBuilder();
-        sb.append("# Waystones Item Cost Extended 2.0.0 Configuration\n");
+        sb.append("# Waystones Item Cost Extended 2.1.0 Configuration\n");
         sb.append("# Changes saved via the in-game config screen take effect immediately.\n\n");
         sb.append("# Allow items linked by reversible lossless crafting recipes (e.g. nugget <-> ingot <-> block)\n");
         sb.append("# to pay item costs with automatic greedy high-denomination change.\n");
@@ -168,6 +176,9 @@ public final class PaymentConfig {
         sb.append("# Client-side: append actual multi-denomination payment, change, wallet, and full-inventory warnings\n");
         sb.append("# to Waystones teleport cost tooltips.\n");
         sb.append("showPaymentPreviewTooltip = ").append(data.showPaymentPreviewTooltip()).append("\n\n");
+        sb.append("# Resolve real-world coordinates for Waystones placed on physics airships/trains/ships\n");
+        sb.append("# (Sable / Create: Aeronautics / Simurail and Valkyrien Skies 2), including unloaded & out-of-view ships.\n");
+        sb.append("fixPhysicsShipDistance = ").append(data.fixPhysicsShipDistance()).append("\n\n");
         sb.append("# Minecraft 1.20.1 only (Waystones 14.1.x does not support warpRequirements).\n");
         sb.append("# Ignored on Minecraft 1.21.1+ where Waystones natively configures warpRequirements.\n");
         sb.append("[legacy_1_20_1]\n");

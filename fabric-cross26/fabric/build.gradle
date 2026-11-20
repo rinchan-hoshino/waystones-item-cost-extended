@@ -43,8 +43,8 @@ def profileValues = [
     waystones_version: waystones_fabric_version.split('\\+')[0],
     balm_version: balm_fabric_version.split('\\+')[0],
     shogi_dependency_json: ',\n    "shogi": ">=26.1"',
-    common_mixins: '"ItemCostMixin", "NetworkingMixin"',
-    client_mixins: '"ShogiItemTooltipMixin"'
+    common_mixins: '"ItemCostMixin", "NetworkingMixin", "PhysicsTeleportContextMixin", "PhysicsIsWithinDistanceMixin", "PhysicsDistanceComparatorMixin"',
+    client_mixins: '"ShogiItemTooltipMixin", "PhysicsWaystoneButtonMixin"'
 ]
 tasks.register('generateProfileResources', Copy) {
     inputs.properties(profileValues)

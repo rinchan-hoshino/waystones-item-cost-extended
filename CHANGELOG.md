@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.1.0
+
+### Physics Sub-World Waystone Distance Support (Sable / Create: Aeronautics / Simurail & Valkyrien Skies 2)
+- **Zero-Dependency Physics Coordinate Resolver (`PhysicsPosResolver`)**: Automatically projects Waystone and player coordinates out of physics sub-worlds (`Sable` used by Create: Aeronautics / Simurail, and `Valkyrien Skies 2`) via lazy `MethodHandle` reflection — zero external hard dependencies and zero overhead when no physics mod is installed.
+- **Unloaded Ship `SavedData` Cache**: Persists last-known real-world coordinates for physics-space Waystones on the server so unloaded airships/trains still charge realistic real-world distances instead of ~28,960 km Plot/Shipyard fees.
+- **Out-of-View Client S2C Sync (`PhysicsPosSync`)**: Syncs compact physics Waystone world coordinates on login and before opening the Waystone selection menu, keeping client GUI distance labels, sorting, tooltips, and button states 100% consistent with server costs even outside tracking range.
+- **Safety Valve & Config Toggle**: Added `fixPhysicsShipDistance = true` in `waystones-item-cost-extended.toml` and in-game Config Screen (`en_us` / `zh_cn` / `zh_tw` / `ja_jp`). Uncached Plot/Shipyard Waystones gracefully fall back to 0 distance (base fee) rather than locking buttons with astronomical costs.
+- **Full 8-Target Coverage & Verification**: Covered all distance entrypoints across `1.20.1`, `1.21.1`, `26.1.2`, and `26.2` (Fabric/Forge/NeoForge), backed by 1,500-round physics property invariant tests and a packaged-JAR NeoForge `1.21.1` GameTest E2E scenario.
+
 ## 2.0.1
 
 - **Dedicated Server isolation**: Separated client-only initialization (`WaystonesItemCostForgeMod$ClientInit` and `WaystonesItemCostNeoForgeMod$ClientInit`) into dedicated client classes so dedicated servers never load client GUI or screen classes.

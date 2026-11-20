@@ -159,6 +159,8 @@ def run_logic_tests() -> None:
             "dev.rinchan.waystonesitemcost.config.*",
             "--tests",
             "dev.rinchan.waystonesitemcost.payment.*",
+            "--tests",
+            "dev.rinchan.waystonesitemcost.physics.*",
         ],
         cwd=ROOT,
         java_version=21,

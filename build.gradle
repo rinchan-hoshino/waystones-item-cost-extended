@@ -95,15 +95,15 @@ ext.adapterDirFor = { String mc ->
 }
 
 ext.commonMixinsFor = { String generation ->
-    if (generation == 'legacy') return '"NetworkingMixin"'
-    if (generation == 'requirement') return '"PaymentRequirementMixin", "ItemRequirementMixin", "ItemRequirementsContextMixin", "NetworkingMixin"'
-    return '"ItemCostMixin", "NetworkingMixin"'
+    if (generation == 'legacy') return '"NetworkingMixin", "LegacyPhysicsDistanceMixin", "LegacyWaystoneMenuSyncMixin"'
+    if (generation == 'requirement') return '"PaymentRequirementMixin", "ItemRequirementMixin", "ItemRequirementsContextMixin", "NetworkingMixin", "PhysicsRequirementDistanceMixin", "PhysicsDistanceComparatorMixin"'
+    return '"ItemCostMixin", "NetworkingMixin", "PhysicsTeleportContextMixin", "PhysicsIsWithinDistanceMixin", "PhysicsDistanceComparatorMixin"'
 }
 
 ext.clientMixinsFor = { String generation ->
     if (generation == 'legacy') return '"LegacyWaystoneButtonMixin"'
-    if (generation == 'requirement') return '"ItemRequirementTooltipMixin", "CombinedRequirementTooltipMixin"'
-    return '"ShogiItemTooltipMixin"'
+    if (generation == 'requirement') return '"ItemRequirementTooltipMixin", "CombinedRequirementTooltipMixin", "PhysicsWaystoneButtonMixin"'
+    return '"ShogiItemTooltipMixin", "PhysicsWaystoneButtonMixin"'
 }
 
 ext.configureWaystonesItemCost = { Project target ->
