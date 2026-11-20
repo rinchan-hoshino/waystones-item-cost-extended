@@ -45,6 +45,14 @@ REQUIRED_ENTRIES = (
 
 
 def detect_java_home(version: int) -> str:
+    for env_var in (
+        f"JAVA_{version}_HOME",
+        f"JAVA_HOME_{version}_X64",
+        f"JAVA_HOME_{version}_ARM64",
+    ):
+        val = os.environ.get(env_var, "").strip()
+        if val and Path(val).exists():
+            return val
     try:
         out = subprocess.check_output(
             ["/usr/libexec/java_home", "-v", str(version)],
