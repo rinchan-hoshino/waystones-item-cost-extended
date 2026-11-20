@@ -72,7 +72,7 @@ Format: `"item_id,base_count,per_km_extra,cross_dim_extra"`. Uses the exact same
 
 | Minecraft | Loaders | Waystones Generation | Lightman's Currency |
 |---|---|---|---|
-| `1.20.1` | Fabric, Forge | Legacy (`14.1.21` + `[legacy_1_20_1]`) | Forge |
+| `1.20.1` | Fabric, Forge | Waystones 14.1.x (`14.1.21` + `[legacy_1_20_1]`) | Forge |
 | `1.21.1` | Fabric, NeoForge | Requirement (`21.1.x`) | NeoForge |
 | `26.1.2` | Fabric, NeoForge | Shogi (`26.1.2.x`) | NeoForge |
 | `26.2` | Fabric, NeoForge | Shogi (`26.2.x`) | — |
@@ -80,8 +80,6 @@ Format: `"item_id,base_count,per_km_extra,cross_dim_extra"`. Uses the exact same
 ---
 
 ## Configuration (`config/waystones-item-cost-extended.toml`)
-
-Existing `config/waystones-item-cost-extended.properties` files from 1.x are automatically migrated on first launch (with the old file backed up to `.properties.bak`).
 
 | Key | Default | Description |
 |---|---|---|

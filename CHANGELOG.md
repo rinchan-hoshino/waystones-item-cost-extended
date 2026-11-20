@@ -2,13 +2,13 @@
 
 ## 2.0.0
 
-### Breaking / Identity Convergence
-- Standardized Mod ID to `waystones_item_cost_extended` (replacing legacy `waystone_emeralds`) and unified Java package to `dev.rinchan.waystonesitemcost`.
+### Core Architecture & Platform Support
+- Standardized Mod ID `waystones_item_cost_extended` and unified Java package `dev.rinchan.waystonesitemcost`.
 - Standardized Mixin configs to `waystones_item_cost_extended.mixins.json` and `waystones_item_cost_extended.client.mixins.json` with soft-degradation logging (`MixinGuard`) so unexpected Waystones/Shogi internal changes safely fall back to vanilla behavior instead of crashing.
 - Converged build matrix to 8 mainstream targets: `1.20.1` (Fabric/Forge), `1.21.1` (Fabric/NeoForge), `26.1.2` (Fabric/NeoForge), and `26.2` (Fabric/NeoForge) with zero external library dependencies.
 
 ### New Features
-- **Zero-Dependency TOML Config & Lossless Migration**: Upgraded configuration to `config/waystones-item-cost-extended.toml` with hot-save support and automatic migration from legacy `.properties` (backed up to `.properties.bak`).
+- **Zero-Dependency TOML Config**: Configuration via `config/waystones-item-cost-extended.toml` with hot-save support.
 - **Sensible Defaults**: Enabled `recipePayments = true`, `searchNestedContainers = true`, and `showPaymentPreviewTooltip = true` by default.
 - **Nested Container Deductions**: Deduct payment items from Bundles and Shulker Boxes inside inventory while strictly keeping returned change in ordinary inventory slots `0..35`.
 - **UI Payment Preview & Full-Inventory Diagnostics**: Added localized tooltip breakdown lines (actual payment, change returned, wallet usage, nested container usage) and explicit red warnings (`INVENTORY_FULL_FOR_CHANGE`) displaying the exact number of slots to free both in tooltips and on teleport rejection.
