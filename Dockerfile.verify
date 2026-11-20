@@ -1,0 +1,39 @@
+FROM ubuntu:24.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
+    curl \
+    git \
+    libgl1 \
+    libglfw3 \
+    libopenal1 \
+    python3 \
+    xvfb \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Eclipse Adoptium Temurin JDK 17, 21, and 25 (linux/amd64 & linux/arm64)
+RUN set -eux; \
+    arch="$(uname -m)"; \
+    case "$arch" in \
+        x86_64)  adopt_arch="x64" ;; \
+        aarch64) adopt_arch="aarch64" ;; \
+        *) echo "Unsupported architecture: $arch" >&2; exit 1 ;; \
+    esac; \
+    mkdir -p /opt/java; \
+    for ver in 17 21 25; do \
+        mkdir -p "/opt/java/temurin-${ver}"; \
+        curl -fsSL "https://api.adoptium.net/v3/binary/latest/${ver}/ga/linux/${adopt_arch}/jdk/hotspot/normal/eclipse" \
+            | tar -xz --strip-components=1 -C "/opt/java/temurin-${ver}"; \
+    done
+
+ENV JAVA_17_HOME=/opt/java/temurin-17 \
+    JAVA_21_HOME=/opt/java/temurin-21 \
+    JAVA_25_HOME=/opt/java/temurin-25 \
+    JAVA_HOME=/opt/java/temurin-21 \
+    PATH="/opt/java/temurin-21/bin:${PATH}"
+
+WORKDIR /workspace
+
+ENTRYPOINT ["xvfb-run", "-a"]

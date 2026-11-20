@@ -31,4 +31,8 @@ dependencies {
 
 tasks.withType(Test).configureEach {
     useJUnitPlatform()
+    systemProperty 'waystones.repo.root', rootProject.projectDir.absolutePath
+    if (project.hasProperty('verifyJarsDir')) {
+        systemProperty 'waystones.verify.jars.dir', project.property('verifyJarsDir').toString()
+    }
 }

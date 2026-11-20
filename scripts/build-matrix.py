@@ -148,8 +148,37 @@ def detect_gradle_9() -> str:
 
 
 def run_logic_tests() -> None:
-    print("=== Running JUnit 5 logic tests ===")
-    run_cmd(["./gradlew", "-PlogicOnly=true", "clean", "test"], cwd=ROOT, java_version=21)
+    print("=== Running JUnit 5 unit & property-invariant tests ===")
+    run_cmd(
+        [
+            "./gradlew",
+            "-PlogicOnly=true",
+            ":logic:clean",
+            ":logic:test",
+            "--tests",
+            "dev.rinchan.waystonesitemcost.config.*",
+            "--tests",
+            "dev.rinchan.waystonesitemcost.payment.*",
+        ],
+        cwd=ROOT,
+        java_version=21,
+    )
+
+
+def run_architecture_tests() -> None:
+    print("\n=== Running ArchitectureContractTest against built release JARs ===")
+    run_cmd(
+        [
+            "./gradlew",
+            "-PlogicOnly=true",
+            ":logic:test",
+            "--tests",
+            "dev.rinchan.waystonesitemcost.architecture.ArchitectureContractTest",
+            "--rerun-tasks",
+        ],
+        cwd=ROOT,
+        java_version=21,
+    )
 
 
 def build_profile(profile: dict, mod_version: str) -> Path:
@@ -302,6 +331,8 @@ def main() -> int:
         jar_path = build_profile(profile, mod_version)
         audit_jar(jar_path, profile, mod_version)
         results.append((profile["id"], jar_path))
+
+    run_architecture_tests()
 
     print("\n=== BUILD MATRIX SUMMARY ===")
     for pid, jar in results:

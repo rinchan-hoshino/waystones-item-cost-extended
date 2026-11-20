@@ -1,17 +1,16 @@
 package dev.rinchan.waystonesitemcost;
 
-import dev.rinchan.waystonesitemcost.client.WaystonesItemCostConfigScreen;
+import dev.rinchan.waystonesitemcost.client.NeoForgeClientInit;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.loading.FMLEnvironment;
-import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
 
 @Mod(MixinGuard.MOD_ID)
 public final class WaystonesItemCostNeoForgeMod {
     public WaystonesItemCostNeoForgeMod(ModContainer container) {
         if (isClient()) {
-            ClientInit.registerConfigScreen(container);
+            NeoForgeClientInit.registerConfigScreen(container);
         }
     }
 
@@ -24,15 +23,6 @@ public final class WaystonesItemCostNeoForgeMod {
             } catch (ReflectiveOperationException e) {
                 return false;
             }
-        }
-    }
-
-    private static final class ClientInit {
-        private static void registerConfigScreen(ModContainer container) {
-            container.registerExtensionPoint(
-                IConfigScreenFactory.class,
-                (modContainer, parent) -> new WaystonesItemCostConfigScreen(parent)
-            );
         }
     }
 }

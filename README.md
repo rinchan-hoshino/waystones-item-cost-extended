@@ -91,3 +91,20 @@ Format: `"item_id,base_count,per_km_extra,cross_dim_extra"`. Uses the exact same
 | `[legacy_1_20_1].itemCosts` | `["minecraft:emerald,1,0,0"]` | *(1.20.1 only)* List of `"item_id,base,per_km,cross_dim"` cost rules. |
 
 <!-- PROJECT_PAGE_END -->
+
+---
+
+## Building & Verification
+
+Enable the local `pre-push` verification gate once after cloning:
+
+```bash
+./scripts/setup-hooks.sh
+```
+
+Run the full 3-gate verification suite (all JUnit unit + property tests, 8-target build matrix + `ArchitectureContractTest`, and packaged-JAR Minecraft `1.21.1` NeoForge black-box E2E):
+
+```bash
+./scripts/verify.sh [--container]
+```
+

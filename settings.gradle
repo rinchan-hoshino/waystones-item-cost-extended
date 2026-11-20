@@ -24,6 +24,7 @@ plugins {
 rootProject.name = 'waystones-item-cost-extended'
 
 def logicOnly = providers.gradleProperty('logicOnly').map { it.toBoolean() }.getOrElse(false)
+def e2eOnly = providers.gradleProperty('e2e').map { it.toBoolean() }.getOrElse(false)
 def profileId = providers.gradleProperty('profile').getOrElse('1.21.1-neoforge')
 def matrix = new JsonSlurper().parse(file('support/profiles.json'))
 def profile = matrix.profiles.find { it.id == profileId }
@@ -33,7 +34,9 @@ if (profile == null) {
 gradle.ext.waystonesItemCostProfile = profile
 include('logic')
 
-if (!logicOnly) {
+if (e2eOnly) {
+    include('e2e-neoforge-1211')
+} else if (!logicOnly) {
     def module
     if (profile.loader == 'fabric') {
         module = 'fabric'

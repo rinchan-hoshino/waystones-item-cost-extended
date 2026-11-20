@@ -1,0 +1,83 @@
+plugins {
+    id 'java-library'
+    id 'net.neoforged.moddev' version '2.0.143'
+}
+
+def p = rootProject.ext.profile
+def releaseVersion = rootProject.ext.releaseVersion
+def packagedModJar = rootProject.file("build/release/waystones-item-cost-extended-${releaseVersion}+1.21.1-neoforge.jar")
+
+group = 'dev.rinchan'
+version = "${releaseVersion}-e2e"
+
+java {
+    toolchain.languageVersion = JavaLanguageVersion.of(21)
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+    options.release = 21
+}
+
+def profileDependenciesDir = rootProject.ext.ensureProfileDependencies(p)
+
+neoForge {
+    version = p.loader_version
+
+    addModdingDependenciesTo(sourceSets.test)
+
+    mods {
+        wice_e2e_harness {
+            sourceSet sourceSets.main
+        }
+    }
+
+    runs {
+        gameTestServer {
+            type = 'gameTestServer'
+            gameDirectory = layout.buildDirectory.dir('run-gametest')
+            systemProperty 'neoforge.enabledGameTestNamespaces', 'wice_e2e_harness'
+            systemProperty 'forge.logging.markers', 'REGISTRIES'
+            logLevel = org.slf4j.event.Level.INFO
+        }
+    }
+}
+
+dependencies {
+    // Real upstream Waystones + Balm JARs
+    implementation files(new File(profileDependenciesDir, "balm-${p.id}.jar"))
+    implementation files(new File(profileDependenciesDir, "waystones-${p.id}.jar"))
+
+    // Real final packaged release JAR (runtimeOnly -> ZERO compile access to mod internals!)
+    runtimeOnly files(packagedModJar)
+
+    testImplementation platform('org.junit:junit-bom:5.10.2')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+tasks.withType(Test).configureEach {
+    useJUnitPlatform()
+    def testRunDir = layout.buildDirectory.dir('run-test').get().asFile
+    workingDir = testRunDir
+    doFirst {
+        if (!packagedModJar.exists()) {
+            throw new GradleException("Packaged release JAR not found: ${packagedModJar}")
+        }
+        testRunDir.mkdirs()
+    }
+}
+
+tasks.matching { it.name == 'runGameTestServer' }.configureEach {
+    doFirst {
+        if (!packagedModJar.exists()) {
+            throw new GradleException("Packaged release JAR not found: ${packagedModJar}. Run python3 scripts/build-matrix.py 1.21.1-neoforge first.")
+        }
+        // Clean previous gametest world/run dir so every E2E run starts fresh
+        def runDir = layout.buildDirectory.dir('run-gametest').get().asFile
+        if (runDir.exists()) {
+            delete runDir
+        }
+        runDir.mkdirs()
+    }
+}
