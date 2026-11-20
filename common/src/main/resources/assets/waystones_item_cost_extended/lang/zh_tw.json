@@ -1,0 +1,22 @@
+{
+  "tooltip.waystones_item_cost_extended.actual_payment": "實際支付: %s",
+  "tooltip.waystones_item_cost_extended.actual_payment_with_change": "實際支付: %s · 找零: %s",
+  "tooltip.waystones_item_cost_extended.from_wallet": "透過 Lightman 錢包/硬幣結算",
+  "tooltip.waystones_item_cost_extended.from_container": "包含背包內收納袋/界伏盒物品",
+  "tooltip.waystones_item_cost_extended.inventory_full_for_change": "背包空位不足，無法放入找零（需空出 %s 格）",
+  "tooltip.waystones_item_cost_extended.legacy_item_cost": "物品消耗: %s %s",
+  "message.waystones_item_cost_extended.inventory_full_for_change": "背包空位不足，無法放入找零（需空出 %s 格）",
+  "message.waystones_item_cost_extended.insufficient_funds": "物品不足，無法支付此次傳送費用。",
+  "screen.waystones_item_cost_extended.config.title": "Waystones Item Cost Extended 設定",
+  "screen.waystones_item_cost_extended.config.recipe_payments": "可逆合成多面額支付與找零",
+  "screen.waystones_item_cost_extended.config.search_nested": "檢索收納袋與界伏盒扣款",
+  "screen.waystones_item_cost_extended.config.show_tooltip": "顯示消耗預覽與找零提示",
+  "screen.waystones_item_cost_extended.config.legacy_enable": "1.20.1 自訂物品消耗",
+  "screen.waystones_item_cost_extended.config.legacy_waive_xp": "1.20.1 免除原版經驗消耗",
+  "screen.waystones_item_cost_extended.config.copy_example": "複製綠寶石消耗設定範例",
+  "screen.waystones_item_cost_extended.config.copied": "已複製設定範例至剪貼簿！",
+  "screen.waystones_item_cost_extended.config.status.configured": "已偵測到 Waystones 物品消耗規則",
+  "screen.waystones_item_cost_extended.config.status.not_configured": "未偵測到 Waystones 物品消耗規則（可點擊下方複製範例）",
+  "screen.waystones_item_cost_extended.config.status.legacy_enabled": "1.20.1 自訂物品消耗已啟用",
+  "screen.waystones_item_cost_extended.config.status.legacy_disabled": "1.20.1 自訂物品消耗未啟用（可在下方開啟）"
+}

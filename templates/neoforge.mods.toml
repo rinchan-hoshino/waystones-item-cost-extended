@@ -1,39 +1,43 @@
-modLoader="lowcodefml"
+modLoader="javafml"
 loaderVersion="[1,)"
 license="GPL-3.0-or-later"
 issueTrackerURL="https://github.com/rinchan-hoshino/waystones-item-cost-extended/issues"
 
 [[mods]]
-modId="waystone_emeralds"
+modId="waystones_item_cost_extended"
 version="${version}"
 displayName="Waystones Item Cost Extended"
 displayURL="https://modrinth.com/mod/waystones-item-cost-extended"
-authors="RinChan"
 logoFile="icon.png"
-description="Extend Waystones with compressed and decompressed item payments and combined item costs."
+authors="RinChan"
+description='''
+Extend Waystones with reversible multi-denomination payments, nested container deductions, combined item costs, payment tooltips, and optional Lightman's Currency support.
+'''
 
 [[mixins]]
-config="paid_waystones.mixins.json"
+config="waystones_item_cost_extended.mixins.json"
+
+[[mixins]]
+config="waystones_item_cost_extended.client.mixins.json"
 ${loader_dependency_toml}
-[[dependencies.waystone_emeralds]]
+[[dependencies.waystones_item_cost_extended]]
 modId="minecraft"
 type="required"
 versionRange="${minecraft_range}"
 ordering="NONE"
 side="BOTH"
 
-[[dependencies.waystone_emeralds]]
+[[dependencies.waystones_item_cost_extended]]
 modId="waystones"
 type="required"
 versionRange="[${waystones_version},)"
 ordering="AFTER"
 side="BOTH"
 
-[[dependencies.waystone_emeralds]]
+[[dependencies.waystones_item_cost_extended]]
 modId="balm"
 type="required"
 versionRange="[${balm_version},)"
 ordering="AFTER"
 side="BOTH"
-${shogi_dependency_toml}
-${lightman_dependency_toml}
+${shogi_dependency_toml}${lightman_dependency_toml}

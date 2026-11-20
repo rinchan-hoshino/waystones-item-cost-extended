@@ -4,23 +4,24 @@ plugins {
     id 'org.spongepowered.mixin' version '0.7-SNAPSHOT'
 }
 
-rootProject.ext.configurePaidWaystones(project)
+rootProject.ext.configureWaystonesItemCost(project)
 def p = rootProject.ext.profile
 
 mixin {
-    add sourceSets.main, 'paid_waystones.refmap.json'
-    config 'paid_waystones.mixins.json'
+    add sourceSets.main, 'waystones_item_cost_extended.refmap.json'
+    config 'waystones_item_cost_extended.mixins.json'
+    config 'waystones_item_cost_extended.client.mixins.json'
 }
 
 minecraft {
     mappings channel: 'official', version: p.minecraft
-    reobf = p.minecraft == '1.20.4'
+    reobf = true
     runs {
         server {
             workingDirectory file('runs/server')
-            args '--nogui', '--mixin.config=paid_waystones.mixins.json'
+            args '--nogui', '--mixin.config=waystones_item_cost_extended.mixins.json'
             mods {
-                waystone_emeralds {
+                waystones_item_cost_extended {
                     source sourceSets.main
                 }
             }
@@ -30,11 +31,20 @@ minecraft {
 
 def profileDependenciesDir = rootProject.ext.ensureProfileDependencies(p)
 
+repositories {
+    flatDir {
+        dirs profileDependenciesDir
+    }
+}
+
 dependencies {
     minecraft "net.minecraftforge:forge:${p.minecraft}-${p.loader_version}"
-    implementation fg.deobf(files(new File(profileDependenciesDir, "balm-${p.id}.jar")))
-    implementation fg.deobf(files(new File(profileDependenciesDir, "waystones-${p.id}.jar")))
+    implementation fg.deobf("local:balm:${p.id}")
+    implementation fg.deobf("local:waystones:${p.id}")
+    if (p.containsKey('lightmanscurrency')) {
+        compileOnly fg.deobf("local:lightmanscurrency:${p.id}")
+    }
     annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
 }
 
-if (p.minecraft == '1.20.4') tasks.named('jar').configure { finalizedBy 'reobfJar' }
+tasks.named('jar').configure { finalizedBy 'reobfJar' }

@@ -5,13 +5,23 @@ plugins {
 
 def repositoryRoot = file('..')
 def profileId = providers.gradleProperty("profileId").getOrElse("${minecraft_version}-fabric")
-def dependencyMinecraft = providers.gradleProperty("dependencyMinecraft").getOrElse(minecraft_version)
 def profileDependenciesDir = providers.gradleProperty('profileDependenciesDir').orNull
 def lockedDependency = { String name ->
     profileDependenciesDir == null ? null : file("${profileDependenciesDir}/${name}-${profileId}.jar")
 }
 def hasNoMojangMappings = minecraft_version == '26.2'
 def dependencyConfiguration = hasNoMojangMappings ? 'implementation' : 'modImplementation'
+def adapterDir = minecraft_version == '1.20.1' ? '1.20.1' : minecraft_version == '1.21.1' ? '1.21.1' : '26'
+def commonMixins = source_generation == 'legacy'
+    ? '"NetworkingMixin"'
+    : source_generation == 'requirement'
+        ? '"PaymentRequirementMixin", "ItemRequirementMixin", "ItemRequirementsContextMixin", "NetworkingMixin"'
+        : '"ItemCostMixin", "NetworkingMixin"'
+def clientMixins = source_generation == 'legacy'
+    ? '"LegacyWaystoneButtonMixin"'
+    : source_generation == 'requirement'
+        ? '"ItemRequirementTooltipMixin", "CombinedRequirementTooltipMixin"'
+        : '"ShogiItemTooltipMixin"'
 
 version = "${mod_version}+${minecraft_version}-fabric"
 group = project.maven_group
@@ -28,9 +38,8 @@ repositories {
 }
 
 loom {
-    splitEnvironmentSourceSets()
     mods {
-        waystone_emeralds {
+        waystones_item_cost_extended {
             sourceSet sourceSets.main
         }
     }
@@ -68,11 +77,11 @@ dependencies {
 sourceSets.main.java {
     srcDir new File(repositoryRoot, 'common/src/main/java')
     srcDir new File(repositoryRoot, 'compat/none/src/main/java')
-        if (source_generation == 'requirement') srcDir new File(repositoryRoot, "networking/requirement-${minecraft_version in ['1.21.10', '1.21.11'] ? 'context' : 'player'}/src/main/java")
-    if (source_generation == 'requirement') srcDir new File(repositoryRoot, "networking/${minecraft_version == '1.20.4' ? 'legacy' : minecraft_version == '1.21.11' ? '1.21.11' : 'modern'}/src/main/java")
-        if (source_generation == 'requirement' && !(minecraft_version in ['1.20.4', '1.21.11'])) srcDir new File(repositoryRoot, "networking/${minecraft_version in ['1.20.6', '1.21', '1.21.1', '1.21.2', '1.21.3', '1.21.4'] ? 'callbacks' : 'codec'}/src/main/java")
+    srcDir new File(repositoryRoot, "networking/${adapterDir}/src/main/java")
+    srcDir new File(repositoryRoot, "adapters/${adapterDir}/src/main/java")
     srcDir new File(repositoryRoot, "versions/${source_generation}/src/main/java")
-    srcDir new File(repositoryRoot, "adapters/${minecraft_version == '1.20.4' ? '1.20.4' : minecraft_version in ['1.20.6', '1.21', '1.21.1'] ? '1.21.1' : minecraft_version in ['1.21.2', '1.21.3'] ? '1.21.3' : minecraft_version.startsWith('26.') ? '26' : minecraft_version == '1.21.11' ? '1.21.11' : '1.21.4'}/src/main/java")
+    srcDir new File(repositoryRoot, 'loaders/fabric/src/main/java')
+    srcDir new File(repositoryRoot, 'loaders/fabric-modmenu-stub/src/main/java')
 }
 sourceSets.main.resources {
     srcDir new File(repositoryRoot, 'common/src/main/resources')
@@ -83,15 +92,21 @@ def generateProfileResources = tasks.register('generateProfileResources') {
     def outputDir = layout.buildDirectory.dir('generated/profileResources')
     outputs.dir outputDir
     inputs.property 'profileId', profileId
+    inputs.property 'modVersion', mod_version
     inputs.files fileTree(new File(repositoryRoot, 'templates'))
     doLast {
         def out = outputDir.get().asFile
         delete out
         out.mkdirs()
         copy {
-            from new File(repositoryRoot, 'templates/paid_waystones.mixins.json')
+            from new File(repositoryRoot, 'templates/waystones_item_cost_extended.mixins.json')
+            from new File(repositoryRoot, 'templates/waystones_item_cost_extended.client.mixins.json')
             into out
-            expand(mixin_class: source_generation == 'shogi' ? 'ItemCostMixin' : 'PaymentRequirementMixin", "ItemRequirementMixin", "ItemRequirementsContextMixin", "NetworkingMixin')
+            expand(
+                java_version: java_version,
+                common_mixins: commonMixins,
+                client_mixins: clientMixins
+            )
         }
         copy {
             from new File(repositoryRoot, 'templates/fabric.mod.json')
@@ -119,17 +134,21 @@ java {
     targetCompatibility = JavaVersion.toVersion(java_version)
     toolchain.languageVersion = JavaLanguageVersion.of(Math.max(21, java_version as int))
 }
-tasks.named('sourcesJar').configure { dependsOn generateProfileResources }
+tasks.named('sourcesJar').configure {
+    dependsOn generateProfileResources
+    exclude 'com/terraformersmc/**'
+}
 tasks.withType(AbstractArchiveTask).configureEach {
     preserveFileTimestamps = false
     reproducibleFileOrder = true
 }
 tasks.named('jar').configure {
+    exclude 'com/terraformersmc/**'
     manifest.attributes(
         'Implementation-Title': 'Waystones Item Cost Extended',
         'Implementation-Version': project.version,
         'Implementation-Vendor': 'RinChan',
-        'MixinConfigs': 'paid_waystones.mixins.json'
+        'MixinConfigs': 'waystones_item_cost_extended.mixins.json,waystones_item_cost_extended.client.mixins.json'
     )
     archiveFileName = "waystones-item-cost-extended-${mod_version}+${minecraft_version}-fabric.jar"
 }

@@ -1,229 +1,60 @@
 {
-  "schema": 1,
-  "paid_waystones_version": "1.2.0",
+  "mod_version": "2.0.0",
   "profiles": [
     {
-      "id": "1.20.4-fabric",
-      "minecraft": "1.20.4",
-      "game_versions": [
-        "1.20.4"
-      ],
+      "id": "1.20.1-fabric",
+      "minecraft": "1.20.1",
+      "game_versions": ["1.20.1"],
       "loader": "fabric",
-      "generation": "requirement",
+      "generation": "legacy",
       "java": 17,
-      "loader_version": "0.15.3",
-      "fabric_api": "0.91.3+1.20.4",
+      "loader_version": "0.16.10",
+      "fabric_api": "0.92.12+1.20.1",
       "waystones": {
-        "version_id": "PLcsWEIi",
-        "version_number": "16.0.5+fabric-1.20.4",
-        "url": "https://cdn.modrinth.com/data/LOpKHB2A/versions/PLcsWEIi/waystones-fabric-1.20.4-16.0.5.jar",
-        "sha512": "e2577f021b9b0ab84a6f1c38c71d9b8a911e482e6967543ab22b0e9cdec9ac615b99b45a4e46de9c76a6fd144953e00463983f4287dac18f0ff91b03e7e996f8"
+        "version_id": "LcO5SBoa",
+        "version_number": "14.1.21+fabric-1.20.1",
+        "url": "https://cdn.modrinth.com/data/LOpKHB2A/versions/LcO5SBoa/waystones-fabric-1.20.1-14.1.21.jar",
+        "sha512": "485998d08f6e3aa0b8763e2d2941b9e14472fd1588b3b6cdf345916f3d4d1df2042567108cf52d44264fa813f0c202e63d44aa861551774192cf4b28234cfa4a"
       },
       "balm": {
-        "version_id": "2e2nF2M9",
-        "version_number": "9.0.9+fabric-1.20.4",
-        "url": "https://cdn.modrinth.com/data/MBAkmtvl/versions/2e2nF2M9/balm-fabric-1.20.4-9.0.9.jar",
-        "sha512": "93cab4aa06f11efc8ee8771818eb4fcddf44f00fcc8ee21944ed8af5a245df1026bd484bf4f9a0da2ea5f4ae9e68131fa1d7ccc618742235817ffc96713cae19"
+        "version_id": "R0jLIYXC",
+        "version_number": "7.3.44+fabric-1.20.1",
+        "url": "https://cdn.modrinth.com/data/MBAkmtvl/versions/R0jLIYXC/balm-fabric-1.20.1-7.3.44.jar",
+        "sha512": "8c7e8056d470fcfcd37fe5116e643a7eab84c2dd4ebf476e8bd3ca101a6508e6905c1b4eabb2516d0a0e83114ae97930bd9556dd95e752e5ed57eda5b71f962b"
       }
     },
     {
-      "id": "1.20.4-forge",
-      "minecraft": "1.20.4",
-      "game_versions": [
-        "1.20.4"
-      ],
+      "id": "1.20.1-forge",
+      "minecraft": "1.20.1",
+      "game_versions": ["1.20.1"],
       "loader": "forge",
-      "generation": "requirement",
+      "generation": "legacy",
       "java": 17,
-      "loader_version": "49.0.10",
+      "loader_version": "47.4.20",
       "fabric_api": null,
       "waystones": {
-        "version_id": "njKGu08k",
-        "version_number": "16.0.5+forge-1.20.4",
-        "url": "https://cdn.modrinth.com/data/LOpKHB2A/versions/njKGu08k/waystones-forge-1.20.4-16.0.5.jar",
-        "sha512": "e446e785a4b5168fd5aaa0773fa044a0e085e05a922aeede445beb9b521efe19d6ea8adcf9e61faf15f807858ce86e8f5a1dfc13bf635313ffd2dda803edf167"
+        "version_id": "Y0IgdaoP",
+        "version_number": "14.1.21+forge-1.20.1",
+        "url": "https://cdn.modrinth.com/data/LOpKHB2A/versions/Y0IgdaoP/waystones-forge-1.20.1-14.1.21.jar",
+        "sha512": "3798eef2f81c2f6066d9dc2dc22bbe9d1c4b62d5aa494c592ffe67ee7f4fb8021361505b3c0b1358d4f9af27e50b1f12d29afb3b4b0b362b5ab227e8be171047"
       },
       "balm": {
-        "version_id": "WYvcCUer",
-        "version_number": "9.0.9+forge-1.20.4",
-        "url": "https://cdn.modrinth.com/data/MBAkmtvl/versions/WYvcCUer/balm-forge-1.20.4-9.0.9.jar",
-        "sha512": "ecf5259dfcd8222cc3d52beb115839cc68b5de23961115fe96f5dbac21ab0e65e44016f44ef64e5fc54162bbe3be98597e7c5c4b3f96b5715cf02328f7d75f95"
-      }
-    },
-    {
-      "id": "1.20.4-neoforge",
-      "minecraft": "1.20.4",
-      "game_versions": [
-        "1.20.4"
-      ],
-      "loader": "neoforge",
-      "generation": "requirement",
-      "java": 17,
-      "loader_version": "20.4.251",
-      "fabric_api": null,
-      "waystones": {
-        "version_id": "rOTAiTFe",
-        "version_number": "16.0.5+neoforge-1.20.4",
-        "url": "https://cdn.modrinth.com/data/LOpKHB2A/versions/rOTAiTFe/waystones-neoforge-1.20.4-16.0.5.jar",
-        "sha512": "9eeeef27ec7de294a1702e169ce579e63c98bff5b25dc647a8fd0e49c0495eb8e55ca9316ba62c2a0b341ca56740d307a041e0426ad6e9fc3008f4c3c86176af"
+        "version_id": "dDN38ae7",
+        "version_number": "7.3.44+forge-1.20.1",
+        "url": "https://cdn.modrinth.com/data/MBAkmtvl/versions/dDN38ae7/balm-forge-1.20.1-7.3.44.jar",
+        "sha512": "bdabc656c7f60d6476a7d8c3d1f7a3d174854c9c4a466a9ff9b220737b717bc8069229471f7cf7eac574ba15e1263b76da8fef2ed1a5273d53e1c9cbf041ad9b"
       },
-      "balm": {
-        "version_id": "Rr2heMKC",
-        "version_number": "9.0.9+neoforge-1.20.4",
-        "url": "https://cdn.modrinth.com/data/MBAkmtvl/versions/Rr2heMKC/balm-neoforge-1.20.4-9.0.9.jar",
-        "sha512": "d0a4d6557d338381cfffaacd066341e41ef6c1328484e50987ec296e6bce80de081d33fee39ac0a53e167b800b3c8d96259d9f52bce10bcbdf7e6a0cbed25d5c"
-      }
-    },
-    {
-      "id": "1.20.6-fabric",
-      "minecraft": "1.20.6",
-      "game_versions": [
-        "1.20.6"
-      ],
-      "loader": "fabric",
-      "generation": "requirement",
-      "java": 21,
-      "loader_version": "0.15.11",
-      "fabric_api": "0.98.0+1.20.6",
-      "waystones": {
-        "version_id": "RJZj1nlX",
-        "version_number": "17.0.2+fabric-1.20.6",
-        "url": "https://cdn.modrinth.com/data/LOpKHB2A/versions/RJZj1nlX/waystones-fabric-1.20.6-17.0.2.jar",
-        "sha512": "00b810d3ad06342dd4b434a3291e37ade2273f2fbb5fa0b386530589b36cf41b9531555917c1207bacf5acdf8b13a2fadcd01da1cecc02562a26403f27e23479"
-      },
-      "balm": {
-        "version_id": "A65ALFtK",
-        "version_number": "10.3.6+fabric-1.20.6",
-        "url": "https://cdn.modrinth.com/data/MBAkmtvl/versions/A65ALFtK/balm-fabric-1.20.6-10.3.6.jar",
-        "sha512": "5e0d45e85eaeda0ff83c31b93bf46204eeb73ae4bc5e478edea4607d376cc5ac2eeb4681373cb592ac2fcaba134d389f887dea8c34edb7184626ba5e44318e61"
-      }
-    },
-    {
-      "id": "1.20.6-forge",
-      "minecraft": "1.20.6",
-      "game_versions": [
-        "1.20.6"
-      ],
-      "loader": "forge",
-      "generation": "requirement",
-      "java": 21,
-      "loader_version": "50.0.22",
-      "fabric_api": null,
-      "waystones": {
-        "version_id": "hkW0ENli",
-        "version_number": "17.0.2+forge-1.20.6",
-        "url": "https://cdn.modrinth.com/data/LOpKHB2A/versions/hkW0ENli/waystones-forge-1.20.6-17.0.2.jar",
-        "sha512": "ca7e11208271555242637ed08e71304412223b24b6143742f8c26fb253630348e1da800b9b3f92c9e2782dbbeabd6eefc55bff4f32480affef84656597c65288"
-      },
-      "balm": {
-        "version_id": "22lhs0MW",
-        "version_number": "10.3.6+forge-1.20.6",
-        "url": "https://cdn.modrinth.com/data/MBAkmtvl/versions/22lhs0MW/balm-forge-1.20.6-10.3.6-all.jar",
-        "sha512": "722e211988125202e6a222efef26d65449b29b5f344ef4fe6fbcc6d69090e98dfed477889f822a836f23aa541ace43a3a080f58ae65ef9ced7ea60b51ef9103f"
-      }
-    },
-    {
-      "id": "1.20.6-neoforge",
-      "minecraft": "1.20.6",
-      "game_versions": [
-        "1.20.6"
-      ],
-      "loader": "neoforge",
-      "generation": "requirement",
-      "java": 21,
-      "loader_version": "20.6.141",
-      "fabric_api": null,
-      "waystones": {
-        "version_id": "3s7K7RYp",
-        "version_number": "17.0.2+neoforge-1.20.6",
-        "url": "https://cdn.modrinth.com/data/LOpKHB2A/versions/3s7K7RYp/waystones-neoforge-1.20.6-17.0.2.jar",
-        "sha512": "89df3a2f6d2f204caf2cdd08f79c5f433fc53fbb40db91a272152dcf0167a5a326056d5bf9ca8f7ef520dc9c19a916ab63eabc6ebdb368460a221356fb2f2cc2"
-      },
-      "balm": {
-        "version_id": "lRDrMehk",
-        "version_number": "10.3.6+neoforge-1.20.6",
-        "url": "https://cdn.modrinth.com/data/MBAkmtvl/versions/lRDrMehk/balm-neoforge-1.20.6-10.3.6-all.jar",
-        "sha512": "afe69fbb60de55001bd5d98268900e17163e330985065b52d1b554fe21dac676d0fcc82bdfdaa47821447087e0524b0b404ecf76a1d9b996aff86d3c0815dce1"
-      }
-    },
-    {
-      "id": "1.21-fabric",
-      "minecraft": "1.21",
-      "game_versions": [
-        "1.21"
-      ],
-      "loader": "fabric",
-      "generation": "requirement",
-      "java": 21,
-      "loader_version": "0.15.11",
-      "fabric_api": "0.100.4+1.21",
-      "waystones": {
-        "version_id": "5QbmQMeD",
-        "version_number": "21.1.19+fabric-1.21.1",
-        "url": "https://cdn.modrinth.com/data/LOpKHB2A/versions/5QbmQMeD/waystones-fabric-1.21.1-21.1.19.jar",
-        "sha512": "2777b9af6ebcaebffd6a0bbe1143d1aaca90b379a8bf4d198255069d17d20e4ee0a1e08dbea380fc3994d37848cd21366b50e852e596385190f5db6f8f3f4ecb"
-      },
-      "balm": {
-        "version_id": "yylFzYuh",
-        "version_number": "21.0.41+fabric-1.21.1",
-        "url": "https://cdn.modrinth.com/data/MBAkmtvl/versions/yylFzYuh/balm-fabric-1.21.1-21.0.41.jar",
-        "sha512": "808a02cca4124e2f1b8fa5bf2a843e5503aff0c8e494ec2fc035b01042e3cab5544e5d13f5f84cfcb0d2582f4c177c97820ac0d0ba8005f5e43dee10e89da245"
-      }
-    },
-    {
-      "id": "1.21-forge",
-      "minecraft": "1.21",
-      "game_versions": [
-        "1.21"
-      ],
-      "loader": "forge",
-      "generation": "requirement",
-      "java": 21,
-      "loader_version": "51.0.0",
-      "fabric_api": null,
-      "waystones": {
-        "version_id": "KLMZ7UQT",
-        "version_number": "21.1.19+forge-1.21.1",
-        "url": "https://cdn.modrinth.com/data/LOpKHB2A/versions/KLMZ7UQT/waystones-forge-1.21.1-21.1.19.jar",
-        "sha512": "0e6e236dad7a346f93b91ab384980d15d4e368f234fee127e8fe799016b75e484cddd538826f3e3fce9cacb69e2256ad74b01cb560441729e0bb96bbb5588c76"
-      },
-      "balm": {
-        "version_id": "U9WkDvEP",
-        "version_number": "21.0.38+forge-1.21.1",
-        "url": "https://cdn.modrinth.com/data/MBAkmtvl/versions/U9WkDvEP/balm-forge-1.21.1-21.0.38-all.jar",
-        "sha512": "c089c00a9505d365a9f6ea61dd498939897cbf4d60b7be8eb6acc512c237a78959d98564845a841bd8983b1214a701528bdaae40c7f90b92d083ba0f71f9efe0"
-      }
-    },
-    {
-      "id": "1.21-neoforge",
-      "minecraft": "1.21",
-      "game_versions": [
-        "1.21"
-      ],
-      "loader": "neoforge",
-      "generation": "requirement",
-      "java": 21,
-      "loader_version": "21.0.167",
-      "fabric_api": null,
-      "waystones": {
-        "version_id": "zKuhJ4Vo",
-        "version_number": "21.1.19+neoforge-1.21.1",
-        "url": "https://cdn.modrinth.com/data/LOpKHB2A/versions/zKuhJ4Vo/waystones-neoforge-1.21.1-21.1.19.jar",
-        "sha512": "8528413b6e528935c14366d2f5cdffddc0e9c5612e30f7188c9fe4555a1b3374f86652c81bc01b5b61b539d68cc8af64a5ba3fe18ff0d8f47a012d795235353c"
-      },
-      "balm": {
-        "version_id": "RDQPXjgQ",
-        "version_number": "21.0.41+neoforge-1.21.1",
-        "url": "https://cdn.modrinth.com/data/MBAkmtvl/versions/RDQPXjgQ/balm-neoforge-1.21.1-21.0.41.jar",
-        "sha512": "e2149b5df7d13bdc3a9e6d956333b1e623a9c2bbb4f0e47fd9a8bc54ff686921264d7439065c8e51a2805c79f8f42913f1436058cbb29c92dc9ab17623150b0c"
+      "lightmanscurrency": {
+        "version_id": "CmqiNDe3",
+        "version_number": "1.20.1-2.3.0.6",
+        "url": "https://cdn.modrinth.com/data/wvMc8AJt/versions/CmqiNDe3/lightmanscurrency-1.20.1-2.3.0.6.jar",
+        "sha512": "3c32ccea9b7533ae72b4758c8d4655e72ae6282c39dd53d297a394da6b27861d7560ac2ffdc297ed14dcca11e902539601a7e34af44ddce3a2ebfbf4bf6e39df"
       }
     },
     {
       "id": "1.21.1-fabric",
       "minecraft": "1.21.1",
-      "game_versions": [
-        "1.21.1"
-      ],
+      "game_versions": ["1.21.1"],
       "loader": "fabric",
       "generation": "requirement",
       "java": 21,
@@ -243,35 +74,9 @@
       }
     },
     {
-      "id": "1.21.1-forge",
-      "minecraft": "1.21.1",
-      "game_versions": [
-        "1.21.1"
-      ],
-      "loader": "forge",
-      "generation": "requirement",
-      "java": 21,
-      "loader_version": "52.0.2",
-      "fabric_api": null,
-      "waystones": {
-        "version_id": "TUYahGNK",
-        "version_number": "21.1.45+forge-1.21.1",
-        "url": "https://cdn.modrinth.com/data/LOpKHB2A/versions/TUYahGNK/waystones-forge-1.21.1-21.1.45.jar",
-        "sha512": "23325215623157d00cecdebce800851ef91f722ee07ee020fb274a9741c1489a7b9a1d01b0591511d48b2e512112a87d57800041c206e550112ebaadc54e35fb"
-      },
-      "balm": {
-        "version_id": "UFBNAOCt",
-        "version_number": "21.0.65+forge-1.21.1",
-        "url": "https://cdn.modrinth.com/data/MBAkmtvl/versions/UFBNAOCt/balm-forge-1.21.1-21.0.65-all.jar",
-        "sha512": "3554ada681bf25b9bc49a98435af0205ad3b2875a372e01f26e4f40e564edca12e38a64ce81b8e706ad67bc51793938c41bf280450646e8da9edd8ee9db3e652"
-      }
-    },
-    {
       "id": "1.21.1-neoforge",
       "minecraft": "1.21.1",
-      "game_versions": [
-        "1.21.1"
-      ],
+      "game_versions": ["1.21.1"],
       "loader": "neoforge",
       "generation": "requirement",
       "java": 21,
@@ -297,613 +102,9 @@
       }
     },
     {
-      "id": "1.21.3-fabric",
-      "minecraft": "1.21.3",
-      "game_versions": [
-        "1.21.2",
-        "1.21.3"
-      ],
-      "loader": "fabric",
-      "generation": "requirement",
-      "java": 21,
-      "loader_version": "0.16.7",
-      "fabric_api": "0.106.1+1.21.3",
-      "waystones": {
-        "version_id": "Q54cy1iA",
-        "version_number": "21.3.3+fabric-1.21.3",
-        "url": "https://cdn.modrinth.com/data/LOpKHB2A/versions/Q54cy1iA/waystones-fabric-1.21.3-21.3.3.jar",
-        "sha512": "1e63823c290e2c2748f75d2174b1fe1ad6f719b8efc5910210ef9b3104983118458eb208bcc12ead3f978bd67b53269b9055dc9284cae8afed815cebb6efbb95"
-      },
-      "balm": {
-        "version_id": "qlXJq5D1",
-        "version_number": "21.3.5+fabric-1.21.3",
-        "url": "https://cdn.modrinth.com/data/MBAkmtvl/versions/qlXJq5D1/balm-fabric-1.21.3-21.3.5.jar",
-        "sha512": "ebe496eac716497a88e7db7e8b2b55e54140aab876ddb024da81b6acd452e0afb7735afd2fd1d9616bee1cc3a2c3a1f6f852a4ec3130518b75e63f982a6dcca6"
-      }
-    },
-    {
-      "id": "1.21.3-neoforge",
-      "minecraft": "1.21.3",
-      "game_versions": [
-        "1.21.2",
-        "1.21.3"
-      ],
-      "loader": "neoforge",
-      "generation": "requirement",
-      "java": 21,
-      "loader_version": "21.3.97",
-      "fabric_api": null,
-      "waystones": {
-        "version_id": "ro1oNjVL",
-        "version_number": "21.3.3+neoforge-1.21.3",
-        "url": "https://cdn.modrinth.com/data/LOpKHB2A/versions/ro1oNjVL/waystones-neoforge-1.21.3-21.3.3.jar",
-        "sha512": "c78331e5cc59f40d2194387b5b2a34e1b96e10c9dd858376374e26512ef23e8e739c8c73a333b74bc28af25f7c4a93f431239cb711de52b2c0fd335006fb5d1c"
-      },
-      "balm": {
-        "version_id": "BlvtUP6m",
-        "version_number": "21.3.5+neoforge-1.21.3",
-        "url": "https://cdn.modrinth.com/data/MBAkmtvl/versions/BlvtUP6m/balm-neoforge-1.21.3-21.3.5.jar",
-        "sha512": "257266c6a07126424c412c69fbd67f2421c07d005ebc12f73098f7addd71dcf87506a742d32d91da112e7231d9f771839fe714605e4a6de8668832731071908c"
-      }
-    },
-    {
-      "id": "1.21.4-fabric",
-      "minecraft": "1.21.4",
-      "game_versions": [
-        "1.21.4"
-      ],
-      "loader": "fabric",
-      "generation": "requirement",
-      "java": 21,
-      "loader_version": "0.16.10",
-      "fabric_api": "0.114.2+1.21.4",
-      "waystones": {
-        "version_id": "rgbIrxOX",
-        "version_number": "21.4.19+fabric-1.21.4",
-        "url": "https://cdn.modrinth.com/data/LOpKHB2A/versions/rgbIrxOX/waystones-fabric-1.21.4-21.4.19.jar",
-        "sha512": "320ab9641109cc4b382a349c930be4af2560f6676036ba7a32f2eabf1670da60c411f6ebe881d2961ecd288f1e717c0dbea7cef0294f5545bd81f0ad556e5ed5"
-      },
-      "balm": {
-        "version_id": "WumOR3k0",
-        "version_number": "21.4.41+fabric-1.21.4",
-        "url": "https://cdn.modrinth.com/data/MBAkmtvl/versions/WumOR3k0/balm-fabric-1.21.4-21.4.41.jar",
-        "sha512": "090141d2542ba17200695aee306bfb6a0fe9374ada28d7b0b10d1dc4cd24d0b9fb3af5e67886d21e1b2d8aa30ee09fb7cd948a8151f76ebce2cf3a81ed85a6c3"
-      }
-    },
-    {
-      "id": "1.21.4-forge",
-      "minecraft": "1.21.4",
-      "game_versions": [
-        "1.21.4"
-      ],
-      "loader": "forge",
-      "generation": "requirement",
-      "java": 21,
-      "loader_version": "54.0.16",
-      "fabric_api": null,
-      "waystones": {
-        "version_id": "EiCVNDa5",
-        "version_number": "21.4.19+forge-1.21.4",
-        "url": "https://cdn.modrinth.com/data/LOpKHB2A/versions/EiCVNDa5/waystones-forge-1.21.4-21.4.19.jar",
-        "sha512": "92836ba1e43bf4e8799c7928ba4a2e86267f8f4a817f04f3bc1ae763a50e563a5c586170cee5fc03d2350da1fde036a183e265ae0216a4a72735023ff752c107"
-      },
-      "balm": {
-        "version_id": "21Zk8ppT",
-        "version_number": "21.4.41+forge-1.21.4",
-        "url": "https://cdn.modrinth.com/data/MBAkmtvl/versions/21Zk8ppT/balm-forge-1.21.4-21.4.41-all.jar",
-        "sha512": "9d0701efd88402d7ed76bd43eb485357104273a09caa9b77d5d970d43fd27dc6558edcb3a51f0f6bb9efedc836779371fbf266d33ce8cc5b93de43e0593b7535"
-      }
-    },
-    {
-      "id": "1.21.4-neoforge",
-      "minecraft": "1.21.4",
-      "game_versions": [
-        "1.21.4"
-      ],
-      "loader": "neoforge",
-      "generation": "requirement",
-      "java": 21,
-      "loader_version": "21.4.157",
-      "fabric_api": null,
-      "waystones": {
-        "version_id": "fuEeXjq1",
-        "version_number": "21.4.19+neoforge-1.21.4",
-        "url": "https://cdn.modrinth.com/data/LOpKHB2A/versions/fuEeXjq1/waystones-neoforge-1.21.4-21.4.19.jar",
-        "sha512": "fb90ed2d4e7a5ef0c6bf61560b5d130cdcf817622aa1bd6a7f36cd7ee29b206c7e627a118dc052dc52e1cf07e0c124b7e6e0e9d9f96d721658e4657f27deae31"
-      },
-      "balm": {
-        "version_id": "1C3tVoOk",
-        "version_number": "21.4.42+neoforge-1.21.4",
-        "url": "https://cdn.modrinth.com/data/MBAkmtvl/versions/1C3tVoOk/balm-neoforge-1.21.4-21.4.42.jar",
-        "sha512": "a32f249e33162784910d09a52e0ccd7a971326e27762adf1a2085332a4d020e4e0807d7fd2e535c6c4cb7fb88c800eeab6371b0dd5b1b1fc427c7694d359ac8a"
-      }
-    },
-    {
-      "id": "1.21.5-fabric",
-      "minecraft": "1.21.5",
-      "game_versions": [
-        "1.21.5"
-      ],
-      "loader": "fabric",
-      "generation": "requirement",
-      "java": 21,
-      "loader_version": "0.16.10",
-      "fabric_api": "0.119.5+1.21.5",
-      "waystones": {
-        "version_id": "OvdGcDja",
-        "version_number": "21.5.11+fabric-1.21.5",
-        "url": "https://cdn.modrinth.com/data/LOpKHB2A/versions/OvdGcDja/waystones-fabric-1.21.5-21.5.11.jar",
-        "sha512": "5e74bed7ba241ea1930d0f4e2b58ca1e625d570e0d123f0fdb0bfae747a9c86987712c5a0eefc08ca28f9b7e5e68cedad8dbc0e4da764c68c1543473e47b5b3a"
-      },
-      "balm": {
-        "version_id": "YixoEDEO",
-        "version_number": "21.5.25+fabric-1.21.5",
-        "url": "https://cdn.modrinth.com/data/MBAkmtvl/versions/YixoEDEO/balm-fabric-1.21.5-21.5.25.jar",
-        "sha512": "8f5732e4364164941d0ca1500c8bdd14058a3dc099fabdeae0a76e8abf2466259636125635f37f5b85af92a52fe12136b75ed8e8e94b70ee1f699a6429b61349"
-      }
-    },
-    {
-      "id": "1.21.5-forge",
-      "minecraft": "1.21.5",
-      "game_versions": [
-        "1.21.5"
-      ],
-      "loader": "forge",
-      "generation": "requirement",
-      "java": 21,
-      "loader_version": "55.0.3",
-      "fabric_api": null,
-      "waystones": {
-        "version_id": "EsPM9Ldb",
-        "version_number": "21.5.11+forge-1.21.5",
-        "url": "https://cdn.modrinth.com/data/LOpKHB2A/versions/EsPM9Ldb/waystones-forge-1.21.5-21.5.11.jar",
-        "sha512": "3702d82eee39c3fc959c07e3d49b2653ae0b5a2831114329648a11e857992a78c6d38407a85cb8ae3a7a23ac0591b31e8341ea751070098d72a333d76dc1301d"
-      },
-      "balm": {
-        "version_id": "uSHUhWFx",
-        "version_number": "21.5.25+forge-1.21.5",
-        "url": "https://cdn.modrinth.com/data/MBAkmtvl/versions/uSHUhWFx/balm-forge-1.21.5-21.5.25-all.jar",
-        "sha512": "6cbfde524a494002a511190bf975071725e9a7d977be002a936d87bf2ca9b3c0a813df42c09eceb52b57a7d8b791cf39f5ea3516f7bfb91e2073bcfca48e6e2e"
-      }
-    },
-    {
-      "id": "1.21.5-neoforge",
-      "minecraft": "1.21.5",
-      "game_versions": [
-        "1.21.5"
-      ],
-      "loader": "neoforge",
-      "generation": "requirement",
-      "java": 21,
-      "loader_version": "21.5.98",
-      "fabric_api": null,
-      "waystones": {
-        "version_id": "Vp0qg9ml",
-        "version_number": "21.5.11+neoforge-1.21.5",
-        "url": "https://cdn.modrinth.com/data/LOpKHB2A/versions/Vp0qg9ml/waystones-neoforge-1.21.5-21.5.11.jar",
-        "sha512": "b9577cc254be0aebc685cd6267eb661a7848ca00f080e79a4032b3bfd81b133dfefbb1fd20429041abd663dbf315fcbca980ed9102d6521aa818f32124dc917a"
-      },
-      "balm": {
-        "version_id": "GsCibamk",
-        "version_number": "21.5.26+neoforge-1.21.5",
-        "url": "https://cdn.modrinth.com/data/MBAkmtvl/versions/GsCibamk/balm-neoforge-1.21.5-21.5.26.jar",
-        "sha512": "cbaafecaa0a8c94e102d730702e3ff46084d2f658251775f6525ce22bac54f238d828f74db66e51b9a2983d744a0ed97311b432f2675e4e36ce6cdb2b6bab72a"
-      }
-    },
-    {
-      "id": "1.21.6-fabric",
-      "minecraft": "1.21.6",
-      "game_versions": [
-        "1.21.6"
-      ],
-      "loader": "fabric",
-      "generation": "requirement",
-      "java": 21,
-      "loader_version": "0.16.14",
-      "fabric_api": "0.127.0+1.21.6",
-      "waystones": {
-        "version_id": "MXoEdE8m",
-        "version_number": "21.6.1+fabric-1.21.6",
-        "url": "https://cdn.modrinth.com/data/LOpKHB2A/versions/MXoEdE8m/waystones-fabric-1.21.6-21.6.1.jar",
-        "sha512": "d5e085f2f5552dfee7ba7f207a020b715d05ce5f8dca99d3e2868fd9abf410851cc65fb4a12951b9f0b9315f0eb59521e243440b7ca7e3607be5abd2693212fc"
-      },
-      "balm": {
-        "version_id": "4arCr13S",
-        "version_number": "21.6.1+fabric-1.21.6",
-        "url": "https://cdn.modrinth.com/data/MBAkmtvl/versions/4arCr13S/balm-fabric-1.21.6-21.6.1.jar",
-        "sha512": "2ecf65ba78e353f46183223298031a896a5447d1495b74e95e4811907fb636faad018e77af03668522a315d3ee8a52527319fbabaae311e4812f95d4bfb5a273"
-      }
-    },
-    {
-      "id": "1.21.6-forge",
-      "minecraft": "1.21.6",
-      "game_versions": [
-        "1.21.6"
-      ],
-      "loader": "forge",
-      "generation": "requirement",
-      "java": 21,
-      "loader_version": "56.0.0",
-      "fabric_api": null,
-      "waystones": {
-        "version_id": "oQ3mY4nC",
-        "version_number": "21.6.2+forge-1.21.6",
-        "url": "https://cdn.modrinth.com/data/LOpKHB2A/versions/oQ3mY4nC/waystones-forge-1.21.6-21.6.2.jar",
-        "sha512": "377a1a6f22fe714d8bbcf6d7ff0d3a41a0385ccf7855516645294d95cf340786166dd4fcbb793d86dcc1f41876519a03bd0a02d3ca83f66a205549958f65fe3b"
-      },
-      "balm": {
-        "version_id": "a67xetjY",
-        "version_number": "21.6.2+forge-1.21.6",
-        "url": "https://cdn.modrinth.com/data/MBAkmtvl/versions/a67xetjY/balm-forge-1.21.6-21.6.2-all.jar",
-        "sha512": "b86a79f5e7e763a88df7a6e614e99249c32eeb8baefc466fb8422745b2afa9c049c0400a51e42ace8e2ee3b78eaeda5136f77151accb7b3944ce770fc78645de"
-      }
-    },
-    {
-      "id": "1.21.6-neoforge",
-      "minecraft": "1.21.6",
-      "game_versions": [
-        "1.21.6"
-      ],
-      "loader": "neoforge",
-      "generation": "requirement",
-      "java": 21,
-      "loader_version": "21.6.20-beta",
-      "fabric_api": null,
-      "waystones": {
-        "version_id": "3KSnBC2i",
-        "version_number": "21.6.1+neoforge-1.21.6",
-        "url": "https://cdn.modrinth.com/data/LOpKHB2A/versions/3KSnBC2i/waystones-neoforge-1.21.6-21.6.1.jar",
-        "sha512": "5d9effb3713760fe120b54eb2ad1d3dd1d84b92f7488cd43f7165ec4209d985440758ee999b6a73963ce741d6ff9f17ad33e6c8529e7f1bcc9d91be0a832adff"
-      },
-      "balm": {
-        "version_id": "euC5n4mT",
-        "version_number": "21.6.3+neoforge-1.21.6",
-        "url": "https://cdn.modrinth.com/data/MBAkmtvl/versions/euC5n4mT/balm-neoforge-1.21.6-21.6.3.jar",
-        "sha512": "b3032fc471cd5432708e3b469ecc6249d56834866de28b65888d0f71644a428b5dc7c0ae55fb55763afc0fa4726817e42aef9a2e995209f690f2105bccb2366a"
-      }
-    },
-    {
-      "id": "1.21.7-fabric",
-      "minecraft": "1.21.7",
-      "game_versions": [
-        "1.21.7"
-      ],
-      "loader": "fabric",
-      "generation": "requirement",
-      "java": 21,
-      "loader_version": "0.16.14",
-      "fabric_api": "0.128.1+1.21.7",
-      "waystones": {
-        "version_id": "4J6CmdiE",
-        "version_number": "21.7.2+fabric-1.21.7",
-        "url": "https://cdn.modrinth.com/data/LOpKHB2A/versions/4J6CmdiE/waystones-fabric-1.21.7-21.7.2.jar",
-        "sha512": "6580c631005eb9afeac00574a98a5a6acb926ad4bd942195f80debb11abdc2dc56d9bc52aeaabf9da0fc4abef49707f9167a1679826e661d06e18ff55eb4f92b"
-      },
-      "balm": {
-        "version_id": "6STx1UB9",
-        "version_number": "21.8.10+fabric-1.21.8",
-        "url": "https://cdn.modrinth.com/data/MBAkmtvl/versions/6STx1UB9/balm-fabric-1.21.8-21.8.10.jar",
-        "sha512": "5d7459d885e34b6b056144d3ec6a2b7b2e34adbf2f5e368329b2fa5066d33b1f686ccd16e5c7d647d90206c65537560f8a6fb423f6ea779dfcad391f342f085e"
-      }
-    },
-    {
-      "id": "1.21.7-forge",
-      "minecraft": "1.21.7",
-      "game_versions": [
-        "1.21.7"
-      ],
-      "loader": "forge",
-      "generation": "requirement",
-      "java": 21,
-      "loader_version": "57.0.2",
-      "fabric_api": null,
-      "waystones": {
-        "version_id": "zEBkZhTH",
-        "version_number": "21.7.2+forge-1.21.7",
-        "url": "https://cdn.modrinth.com/data/LOpKHB2A/versions/zEBkZhTH/waystones-forge-1.21.7-21.7.2.jar",
-        "sha512": "a1204e02d31a5a4fa380be458829c0889c6ae443e7977f25152585579bf8110c4c214d6f383fee5a5044f90339abf3b4b756ceae1a3172b9d67c7e801826875c"
-      },
-      "balm": {
-        "version_id": "JNR5WexW",
-        "version_number": "21.8.10+forge-1.21.8",
-        "url": "https://cdn.modrinth.com/data/MBAkmtvl/versions/JNR5WexW/balm-forge-1.21.8-21.8.10-all.jar",
-        "sha512": "11ec1755680c84f754a2ee856f4a14cacff0f8e1977dc3a7f4de833d51bb6ef0f1e7a0226415c89700c8a01e4e238049c793f422184f84b68aae230f98c94f47"
-      }
-    },
-    {
-      "id": "1.21.7-neoforge",
-      "minecraft": "1.21.7",
-      "game_versions": [
-        "1.21.7"
-      ],
-      "loader": "neoforge",
-      "generation": "requirement",
-      "java": 21,
-      "loader_version": "21.7.25-beta",
-      "fabric_api": null,
-      "waystones": {
-        "version_id": "Zp8buxPh",
-        "version_number": "21.7.2+neoforge-1.21.7",
-        "url": "https://cdn.modrinth.com/data/LOpKHB2A/versions/Zp8buxPh/waystones-neoforge-1.21.7-21.7.2.jar",
-        "sha512": "41f9125be6d864d55556cf7aff048b0b53dc4f29533fe550f92ffcf0a72e1f136cf7db7fe1baf5681b2ae96d58d92585e051b70efb89e3cd8f883f55757d7f77"
-      },
-      "balm": {
-        "version_id": "vTRPWdzg",
-        "version_number": "21.8.10+neoforge-1.21.8",
-        "url": "https://cdn.modrinth.com/data/MBAkmtvl/versions/vTRPWdzg/balm-neoforge-1.21.8-21.8.10.jar",
-        "sha512": "c0500825a640d1c43afd525acee3186df4290315927d4a7b28f9845d34556e530b9c6c7626c639eea85fed7ef22bb7309210d4ea47ca2dcdd4b7ce97609f2616"
-      }
-    },
-    {
-      "id": "1.21.8-fabric",
-      "minecraft": "1.21.8",
-      "game_versions": [
-        "1.21.8"
-      ],
-      "loader": "fabric",
-      "generation": "requirement",
-      "java": 21,
-      "loader_version": "0.16.14",
-      "fabric_api": "0.129.0+1.21.8",
-      "waystones": {
-        "version_id": "jPsizyXy",
-        "version_number": "21.8.5+fabric-1.21.8",
-        "url": "https://cdn.modrinth.com/data/LOpKHB2A/versions/jPsizyXy/waystones-fabric-1.21.8-21.8.5.jar",
-        "sha512": "6eb60ddd176a7bc0060940e32ef0642056914b8d90115c06a789cf358c428dab2815525932ecfbdc73aea8f95166390367648c9aec8f2e37a44edc08457baa2c"
-      },
-      "balm": {
-        "version_id": "6STx1UB9",
-        "version_number": "21.8.10+fabric-1.21.8",
-        "url": "https://cdn.modrinth.com/data/MBAkmtvl/versions/6STx1UB9/balm-fabric-1.21.8-21.8.10.jar",
-        "sha512": "5d7459d885e34b6b056144d3ec6a2b7b2e34adbf2f5e368329b2fa5066d33b1f686ccd16e5c7d647d90206c65537560f8a6fb423f6ea779dfcad391f342f085e"
-      }
-    },
-    {
-      "id": "1.21.8-forge",
-      "minecraft": "1.21.8",
-      "game_versions": [
-        "1.21.8"
-      ],
-      "loader": "forge",
-      "generation": "requirement",
-      "java": 21,
-      "loader_version": "58.0.0",
-      "fabric_api": null,
-      "waystones": {
-        "version_id": "oNEeAUmj",
-        "version_number": "21.8.5+forge-1.21.8",
-        "url": "https://cdn.modrinth.com/data/LOpKHB2A/versions/oNEeAUmj/waystones-forge-1.21.8-21.8.5.jar",
-        "sha512": "6563120872d61102db2cf5c74467dcfed3c64c6e488824a1a64843550af05081b7982402119bd90f22abbdb42d10317ac62edb234a879cf58298143b496f9bdf"
-      },
-      "balm": {
-        "version_id": "JNR5WexW",
-        "version_number": "21.8.10+forge-1.21.8",
-        "url": "https://cdn.modrinth.com/data/MBAkmtvl/versions/JNR5WexW/balm-forge-1.21.8-21.8.10-all.jar",
-        "sha512": "11ec1755680c84f754a2ee856f4a14cacff0f8e1977dc3a7f4de833d51bb6ef0f1e7a0226415c89700c8a01e4e238049c793f422184f84b68aae230f98c94f47"
-      }
-    },
-    {
-      "id": "1.21.8-neoforge",
-      "minecraft": "1.21.8",
-      "game_versions": [
-        "1.21.8"
-      ],
-      "loader": "neoforge",
-      "generation": "requirement",
-      "java": 21,
-      "loader_version": "21.8.54",
-      "fabric_api": null,
-      "waystones": {
-        "version_id": "mT9mtsiC",
-        "version_number": "21.8.5+neoforge-1.21.8",
-        "url": "https://cdn.modrinth.com/data/LOpKHB2A/versions/mT9mtsiC/waystones-neoforge-1.21.8-21.8.5.jar",
-        "sha512": "ce3e79cde8b3f66b9941c807c79af586769344758a1b59073a97daf9126ef3092e8c093dfb01d9ea50f1153a761f4ffe1f261136afecaef4e69edcf790bbd92e"
-      },
-      "balm": {
-        "version_id": "vTRPWdzg",
-        "version_number": "21.8.10+neoforge-1.21.8",
-        "url": "https://cdn.modrinth.com/data/MBAkmtvl/versions/vTRPWdzg/balm-neoforge-1.21.8-21.8.10.jar",
-        "sha512": "c0500825a640d1c43afd525acee3186df4290315927d4a7b28f9845d34556e530b9c6c7626c639eea85fed7ef22bb7309210d4ea47ca2dcdd4b7ce97609f2616"
-      }
-    },
-    {
-      "id": "1.21.9-fabric",
-      "minecraft": "1.21.9",
-      "game_versions": [
-        "1.21.9"
-      ],
-      "loader": "fabric",
-      "generation": "requirement",
-      "java": 21,
-      "loader_version": "0.17.2",
-      "fabric_api": "0.133.14+1.21.9",
-      "waystones": {
-        "version_id": "117bXtCF",
-        "version_number": "21.9.2+fabric-1.21.9",
-        "url": "https://cdn.modrinth.com/data/LOpKHB2A/versions/117bXtCF/waystones-fabric-1.21.9-21.9.2.jar",
-        "sha512": "f5ca9cc1cd7526a5094cec32b3d77d3767db70e659cdffe32a74b8324e56b08e5079889a3b93023917ffa0ca4b40def4760f0e72414c83aa3bdb4ed56fbe926b"
-      },
-      "balm": {
-        "version_id": "7TxO9j9o",
-        "version_number": "21.9.4+fabric-1.21.9",
-        "url": "https://cdn.modrinth.com/data/MBAkmtvl/versions/7TxO9j9o/balm-fabric-1.21.9-21.9.4.jar",
-        "sha512": "11af36db560895d30c1eae1095a21643527a652ff8e14ce115b076eb2390f0853961a0a7a4bd8f0e8465367fc50a74eb766110f20c6c85ad358c4c580dfbe887"
-      }
-    },
-    {
-      "id": "1.21.9-neoforge",
-      "minecraft": "1.21.9",
-      "game_versions": [
-        "1.21.9"
-      ],
-      "loader": "neoforge",
-      "generation": "requirement",
-      "java": 21,
-      "loader_version": "21.9.16-beta",
-      "fabric_api": null,
-      "waystones": {
-        "version_id": "HsyHHjCT",
-        "version_number": "21.9.2+neoforge-1.21.9",
-        "url": "https://cdn.modrinth.com/data/LOpKHB2A/versions/HsyHHjCT/waystones-neoforge-1.21.9-21.9.2.jar",
-        "sha512": "e6c5c480d99468ddb45a25290bc521c55a8cf142f0f40f58608ce7fc9527515ca23e4434aecea92830b8a705dea5153ab25bbfcdbdc1e6b95e9cd2835a97ae37"
-      },
-      "balm": {
-        "version_id": "WHqkTxC0",
-        "version_number": "21.9.4+neoforge-1.21.9",
-        "url": "https://cdn.modrinth.com/data/MBAkmtvl/versions/WHqkTxC0/balm-neoforge-1.21.9-21.9.4.jar",
-        "sha512": "d9d6d40532dc82424fbf41a4060dc38743762c1987c5822435455f733fd10d963a5f132beef54b7c93a13966c48baefe0f15c4fc4e39964c494c637cb7312f7d"
-      }
-    },
-    {
-      "id": "1.21.10-fabric",
-      "minecraft": "1.21.10",
-      "game_versions": [
-        "1.21.10"
-      ],
-      "loader": "fabric",
-      "generation": "requirement",
-      "java": 21,
-      "loader_version": "0.17.2",
-      "fabric_api": "0.135.0+1.21.10",
-      "waystones": {
-        "version_id": "ftCxiLY9",
-        "version_number": "21.10.5+fabric-1.21.10",
-        "url": "https://cdn.modrinth.com/data/LOpKHB2A/versions/ftCxiLY9/waystones-fabric-1.21.10-21.10.5.jar",
-        "sha512": "dc40cda862aba8f5738185abd6f1c8731eb488156be5c6bf4f8462bcf90ae9e1f0abaec4b28b2a107f7789cae0653c1745a86d610889deaa22f330e4fa3112ea"
-      },
-      "balm": {
-        "version_id": "9HjDG5Uj",
-        "version_number": "21.10.11+fabric-1.21.10",
-        "url": "https://cdn.modrinth.com/data/MBAkmtvl/versions/9HjDG5Uj/balm-fabric-1.21.10-21.10.11.jar",
-        "sha512": "3bb6422a31487ab953d61cbe12dd5230e22a87d24f25cc216657307d0bf1f1bfa1426204d50a7f4a276fcd364214343da9fad321ea8573ae34faf87672991039"
-      }
-    },
-    {
-      "id": "1.21.10-forge",
-      "minecraft": "1.21.10",
-      "game_versions": [
-        "1.21.10"
-      ],
-      "loader": "forge",
-      "generation": "requirement",
-      "java": 21,
-      "loader_version": "60.0.15",
-      "fabric_api": null,
-      "waystones": {
-        "version_id": "PcE7XbYH",
-        "version_number": "21.10.5+forge-1.21.10",
-        "url": "https://cdn.modrinth.com/data/LOpKHB2A/versions/PcE7XbYH/waystones-forge-1.21.10-21.10.5.jar",
-        "sha512": "37d45bfdfffbe851b94983517019acfaf24916b7fa32d701231962000466948a1b77f1f9c90ae10b2611b93d95f75c5a48b1c8aa966fdc332539b5acc55a2351"
-      },
-      "balm": {
-        "version_id": "cBpkYXHr",
-        "version_number": "21.10.11+forge-1.21.10",
-        "url": "https://cdn.modrinth.com/data/MBAkmtvl/versions/cBpkYXHr/balm-forge-1.21.10-21.10.11-all.jar",
-        "sha512": "7c39a7548f0d26f6967f1919677f3282d0250b397a589058415607c6e2f65e113ddd2bc4783348dbb3638a40c1ff2793405a96947e588ef5596c01019cd33158"
-      }
-    },
-    {
-      "id": "1.21.10-neoforge",
-      "minecraft": "1.21.10",
-      "game_versions": [
-        "1.21.10"
-      ],
-      "loader": "neoforge",
-      "generation": "requirement",
-      "java": 21,
-      "loader_version": "21.10.64",
-      "fabric_api": null,
-      "waystones": {
-        "version_id": "vHNilG6J",
-        "version_number": "21.10.5+neoforge-1.21.10",
-        "url": "https://cdn.modrinth.com/data/LOpKHB2A/versions/vHNilG6J/waystones-neoforge-1.21.10-21.10.5.jar",
-        "sha512": "cb24b827dea63c19c62c8a098293339f7250ec3d26ebbc92ab196f1b81968f299ffa41e124ab5a2f9ed794e5716f8c72bf266097ab9c9394f76996f99b7531f0"
-      },
-      "balm": {
-        "version_id": "PE3ktPuX",
-        "version_number": "21.10.11+neoforge-1.21.10",
-        "url": "https://cdn.modrinth.com/data/MBAkmtvl/versions/PE3ktPuX/balm-neoforge-1.21.10-21.10.11.jar",
-        "sha512": "f45815ef8d3362f44bd8d3bc665a2feee5e497182da065f7190a5b93da0ee14399d20c1bc7f2edfadbc26423c844e2e45039a5513fac5afcb790f82c0a4fae4f"
-      }
-    },
-    {
-      "id": "1.21.11-fabric",
-      "minecraft": "1.21.11",
-      "game_versions": [
-        "1.21.11"
-      ],
-      "loader": "fabric",
-      "generation": "requirement",
-      "java": 21,
-      "loader_version": "0.18.4",
-      "fabric_api": "0.141.6+1.21.11",
-      "waystones": {
-        "version_id": "MydMW2TT",
-        "version_number": "21.11.9+fabric-1.21.11",
-        "url": "https://cdn.modrinth.com/data/LOpKHB2A/versions/MydMW2TT/waystones-fabric-1.21.11-21.11.9.jar",
-        "sha512": "047049d8c97c2acdf33c9abaaa6fa2da0ac4c57f81a4961a25c3d58addc6adfcdcc793a7bf6ca1b379312ace69f48b0d7c383b5f1d4309919178632b46ded978"
-      },
-      "balm": {
-        "version_id": "5POKgjJn",
-        "version_number": "21.11.9.1+fabric-1.21.11",
-        "url": "https://cdn.modrinth.com/data/MBAkmtvl/versions/5POKgjJn/balm-fabric-1.21.11-21.11.9.1.jar",
-        "sha512": "8c1d759a5abb065da25b395c166c82435417ad456995930cff7bba6c12067206efa57c8ca2c9accd3beb2e40c35982238519fc2a3697794998929c37a20377e2"
-      }
-    },
-    {
-      "id": "1.21.11-forge",
-      "minecraft": "1.21.11",
-      "game_versions": [
-        "1.21.11"
-      ],
-      "loader": "forge",
-      "generation": "requirement",
-      "java": 21,
-      "loader_version": "61.0.3",
-      "fabric_api": null,
-      "waystones": {
-        "version_id": "7TZJIsSn",
-        "version_number": "21.11.9+forge-1.21.11",
-        "url": "https://cdn.modrinth.com/data/LOpKHB2A/versions/7TZJIsSn/waystones-forge-1.21.11-21.11.9.jar",
-        "sha512": "b86a1a1bfd2bbb682126229a68e86293608e861f53e377de6b85713f9772df1a2dfe0cb7b7c024120a4d3213e4622acdd7b82d37060eaa0d503682cc40ce5623"
-      },
-      "balm": {
-        "version_id": "rxqCeXZU",
-        "version_number": "21.11.9.1+forge-1.21.11",
-        "url": "https://cdn.modrinth.com/data/MBAkmtvl/versions/rxqCeXZU/balm-forge-1.21.11-21.11.9.1.jar",
-        "sha512": "8c0763c49718b1d897ef90a3c2a0b7906691411d52ff51b22e6ba21d0939e3be30157fe99030903003356396e9a227daa2b3c4c8f2bfe51da7b21ce0930350ab"
-      }
-    },
-    {
-      "id": "1.21.11-neoforge",
-      "minecraft": "1.21.11",
-      "game_versions": [
-        "1.21.11"
-      ],
-      "loader": "neoforge",
-      "generation": "requirement",
-      "java": 21,
-      "loader_version": "21.11.45",
-      "fabric_api": null,
-      "waystones": {
-        "version_id": "z7behAlZ",
-        "version_number": "21.11.9+neoforge-1.21.11",
-        "url": "https://cdn.modrinth.com/data/LOpKHB2A/versions/z7behAlZ/waystones-neoforge-1.21.11-21.11.9.jar",
-        "sha512": "edce7ff99f25cf3c484cff89c7471ead57f3c2e25d36cebd7af75ac84b4e3abd2c91de4828ed7cccee1fca30489e04d32093b725c3ebdb02fe6af0900b8e15fe"
-      },
-      "balm": {
-        "version_id": "tKWaiIeW",
-        "version_number": "21.11.9.1+neoforge-1.21.11",
-        "url": "https://cdn.modrinth.com/data/MBAkmtvl/versions/tKWaiIeW/balm-neoforge-1.21.11-21.11.9.1.jar",
-        "sha512": "f99cefde0b81c854f79f404c0bc78fdef6e1f7abd2d55a860362167d0288a71ec327c27f23954e7c7945970bf0a849b40a197a733853077da54c858ea5a63841"
-      }
-    },
-    {
       "id": "26.1.2-fabric",
       "minecraft": "26.1.2",
-      "game_versions": [
-        "26.1.2"
-      ],
+      "game_versions": ["26.1.2"],
       "loader": "fabric",
       "generation": "shogi",
       "java": 25,
@@ -931,9 +132,7 @@
     {
       "id": "26.1.2-neoforge",
       "minecraft": "26.1.2",
-      "game_versions": [
-        "26.1.2"
-      ],
+      "game_versions": ["26.1.2"],
       "loader": "neoforge",
       "generation": "shogi",
       "java": 25,
@@ -956,14 +155,18 @@
         "version_number": "26.1.2.8+neoforge-26.1.2",
         "url": "https://cdn.modrinth.com/data/bi4iCmsw/versions/LVd3JsbR/shogi-neoforge-26.1.2-26.1.2.8.jar",
         "sha512": "4985aef707b7c9df03fd00805c6aeed1afa1b549c7e33d36aef737173d3236496eede9ad87d76d7e3b79a77d6787fd26dc560f53e675afa97d78cd0c93aa3e72"
+      },
+      "lightmanscurrency": {
+        "version_id": "75eoqoZA",
+        "version_number": "26.1-1.0.0.4",
+        "url": "https://cdn.modrinth.com/data/wvMc8AJt/versions/75eoqoZA/lightmanscurrency-26.1-1.0.0.4.jar",
+        "sha512": "bcc7b1dd1acc095f460b631b1b3f18c8bb67a9885b1a0c5efed81187f1839d2bda94649af86e267c0e044f71ed04abcad783cb7dd7e7d2d363668cd9a9901aca"
       }
     },
     {
       "id": "26.2-fabric",
       "minecraft": "26.2",
-      "game_versions": [
-        "26.2"
-      ],
+      "game_versions": ["26.2"],
       "loader": "fabric",
       "generation": "shogi",
       "java": 25,
@@ -991,9 +194,7 @@
     {
       "id": "26.2-neoforge",
       "minecraft": "26.2",
-      "game_versions": [
-        "26.2"
-      ],
+      "game_versions": ["26.2"],
       "loader": "neoforge",
       "generation": "shogi",
       "java": 25,

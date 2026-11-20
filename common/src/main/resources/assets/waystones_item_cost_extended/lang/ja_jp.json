@@ -1,0 +1,22 @@
+{
+  "tooltip.waystones_item_cost_extended.actual_payment": "実際の支払い: %s",
+  "tooltip.waystones_item_cost_extended.actual_payment_with_change": "実際の支払い: %s · お釣り: %s",
+  "tooltip.waystones_item_cost_extended.from_wallet": "Lightman ウォレット・硬貨で支払い",
+  "tooltip.waystones_item_cost_extended.from_container": "バンドル・シュルカーボックス内のアイテムを含む",
+  "tooltip.waystones_item_cost_extended.inventory_full_for_change": "お釣りを受け取るインベントリ空き枠が不足しています（あと %s スロット必要）",
+  "tooltip.waystones_item_cost_extended.legacy_item_cost": "アイテムコスト: %s %s",
+  "message.waystones_item_cost_extended.inventory_full_for_change": "お釣りを受け取るインベントリ空き枠が不足しています（あと %s スロット必要）。",
+  "message.waystones_item_cost_extended.insufficient_funds": "テレポート費用を支払うためのアイテムが不足しています。",
+  "screen.waystones_item_cost_extended.config.title": "Waystones Item Cost Extended 設定",
+  "screen.waystones_item_cost_extended.config.recipe_payments": "可逆クラフトによる自動両替とお釣り",
+  "screen.waystones_item_cost_extended.config.search_nested": "バンドル・シュルカーボックスから支払い",
+  "screen.waystones_item_cost_extended.config.show_tooltip": "支払い内訳・お釣りツールチップ表示",
+  "screen.waystones_item_cost_extended.config.legacy_enable": "1.20.1 カスタムアイテムコスト",
+  "screen.waystones_item_cost_extended.config.legacy_waive_xp": "1.20.1 バニラ経験値コストを免除",
+  "screen.waystones_item_cost_extended.config.copy_example": "エメラルドコスト設定例をコピー",
+  "screen.waystones_item_cost_extended.config.copied": "設定例をクリップボードにコピーしました！",
+  "screen.waystones_item_cost_extended.config.status.configured": "Waystones のアイテムコスト設定を検出しました",
+  "screen.waystones_item_cost_extended.config.status.not_configured": "Waystones のアイテムコスト設定が未検出です（下のボタンで例をコピー）",
+  "screen.waystones_item_cost_extended.config.status.legacy_enabled": "1.20.1 カスタムアイテムコスト: 有効",
+  "screen.waystones_item_cost_extended.config.status.legacy_disabled": "1.20.1 カスタムアイテムコスト: 無効（下で切替可能）"
+}

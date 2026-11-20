@@ -43,18 +43,31 @@ def profileValues = [
     waystones_version: waystones_fabric_version.split('\\+')[0],
     balm_version: balm_fabric_version.split('\\+')[0],
     shogi_dependency_json: ',\n    "shogi": ">=26.1"',
-    mixin_class: 'ItemCostMixin'
+    common_mixins: '"ItemCostMixin", "NetworkingMixin"',
+    client_mixins: '"ShogiItemTooltipMixin"'
 ]
 tasks.register('generateProfileResources', Copy) {
     inputs.properties(profileValues)
     from('../../templates/fabric.mod.json')
-    from('../../templates/paid_waystones.mixins.json')
+    from('../../templates/waystones_item_cost_extended.mixins.json')
+    from('../../templates/waystones_item_cost_extended.client.mixins.json')
     into(generatedResources)
     filteringCharset = 'UTF-8'
     expand(profileValues)
 }
 tasks.named('processResources').configure { dependsOn tasks.named('generateProfileResources') }
-tasks.named('jar').configure { manifest { attributes('MixinConfigs': 'paid_waystones.mixins.json') } }
+tasks.named('jar').configure {
+    exclude 'com/terraformersmc/**'
+    manifest {
+        attributes(
+            'Implementation-Title': 'Waystones Item Cost Extended',
+            'Implementation-Version': project.version,
+            'Implementation-Vendor': 'RinChan',
+            'MixinConfigs': 'waystones_item_cost_extended.mixins.json,waystones_item_cost_extended.client.mixins.json'
+        )
+    }
+    archiveFileName = "waystones-item-cost-extended-${mod_version}+${minecraft_version}-fabric.jar"
+}
 tasks.withType(JavaCompile).configureEach { options.release = java_version as int; options.encoding = 'UTF-8' }
 tasks.withType(AbstractArchiveTask).configureEach { preserveFileTimestamps = false; reproducibleFileOrder = true }
 java { toolchain.languageVersion = JavaLanguageVersion.of(java_version as int) }

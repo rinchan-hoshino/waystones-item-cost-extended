@@ -1,0 +1,9 @@
+{
+  "required": false,
+  "package": "dev.rinchan.waystonesitemcost.mixin.client",
+  "compatibilityLevel": "JAVA_${java_version}",
+  "client": [${client_mixins}],
+  "injectors": {
+    "defaultRequire": 0
+  }
+}

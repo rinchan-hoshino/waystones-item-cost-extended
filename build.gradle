@@ -1,5 +1,5 @@
-ext.profile = gradle.ext.paidWaystonesProfile
-ext.releaseVersion = new groovy.json.JsonSlurper().parse(file('support/profiles.json')).paid_waystones_version
+ext.profile = gradle.ext.waystonesItemCostProfile
+ext.releaseVersion = new groovy.json.JsonSlurper().parse(file('support/profiles.json')).mod_version
 
 ext.ensureProfileDependencies = { Map selected ->
     def dir = providers.gradleProperty('profileDependenciesDir')
@@ -65,7 +65,10 @@ allprojects {
     repositories {
         maven {
             url = 'https://libraries.minecraft.net'
-            content { includeGroup 'org.lwjgl' }
+            content {
+                includeGroup 'org.lwjgl'
+                includeGroup 'com.mojang'
+            }
         }
         mavenCentral()
         maven { url = 'https://maven.fabricmc.net' }
@@ -78,7 +81,32 @@ allprojects {
     }
 }
 
-ext.configurePaidWaystones = { Project target ->
+ext.compatDirFor = { Map selected ->
+    if (selected.id == '1.20.1-forge') return 'lightman-1.20.1'
+    if (selected.id == '1.21.1-neoforge') return 'lightman-1.21.1'
+    if (selected.id == '26.1.2-neoforge') return 'lightman-26.1'
+    return 'none'
+}
+
+ext.adapterDirFor = { String mc ->
+    if (mc == '1.20.1') return '1.20.1'
+    if (mc == '1.21.1') return '1.21.1'
+    return '26'
+}
+
+ext.commonMixinsFor = { String generation ->
+    if (generation == 'legacy') return '"NetworkingMixin"'
+    if (generation == 'requirement') return '"PaymentRequirementMixin", "ItemRequirementMixin", "ItemRequirementsContextMixin", "NetworkingMixin"'
+    return '"ItemCostMixin", "NetworkingMixin"'
+}
+
+ext.clientMixinsFor = { String generation ->
+    if (generation == 'legacy') return '"LegacyWaystoneButtonMixin"'
+    if (generation == 'requirement') return '"ItemRequirementTooltipMixin", "CombinedRequirementTooltipMixin"'
+    return '"ShogiItemTooltipMixin"'
+}
+
+ext.configureWaystonesItemCost = { Project target ->
     target.layout.buildDirectory = rootProject.layout.buildDirectory.dir("profile-work/${profile.id}/${target.name}")
     target.group = 'dev.rinchan'
     target.version = "${releaseVersion}+${profile.minecraft}-${profile.loader}"
@@ -98,14 +126,20 @@ ext.configurePaidWaystones = { Project target ->
         reproducibleFileOrder = true
     }
 
+    def adapterDir = adapterDirFor(profile.minecraft as String)
+    def compatDir = compatDirFor(profile)
+
     target.sourceSets.main.java {
         srcDir rootProject.file('common/src/main/java')
-        srcDir rootProject.file("compat/${profile.id == '1.21.1-neoforge' ? 'lightman-1.21.1' : 'none'}/src/main/java")
-        if (profile.generation == 'requirement') srcDir rootProject.file("networking/requirement-${profile.minecraft in ['1.21.10', '1.21.11'] ? 'context' : 'player'}/src/main/java")
-        if (profile.generation == 'requirement') srcDir rootProject.file("networking/${profile.minecraft == '1.20.4' ? 'legacy' : profile.minecraft == '1.21.11' ? '1.21.11' : 'modern'}/src/main/java")
-        if (profile.generation == 'requirement' && !(profile.minecraft in ['1.20.4', '1.21.11'])) srcDir rootProject.file("networking/${profile.minecraft in ['1.20.6', '1.21', '1.21.1', '1.21.2', '1.21.3', '1.21.4'] ? 'callbacks' : 'codec'}/src/main/java")
-        srcDir rootProject.file("adapters/${profile.minecraft == '1.20.4' ? '1.20.4' : profile.minecraft in ['1.20.6', '1.21', '1.21.1'] ? '1.21.1' : profile.minecraft == '1.21.3' ? '1.21.3' : profile.minecraft.startsWith('26.') ? '26' : profile.minecraft == '1.21.11' ? '1.21.11' : '1.21.4'}/src/main/java")
+        srcDir rootProject.file("compat/${compatDir}/src/main/java")
+        srcDir rootProject.file("networking/${adapterDir}/src/main/java")
+        srcDir rootProject.file("adapters/${adapterDir}/src/main/java")
         srcDir rootProject.file("versions/${profile.generation}/src/main/java")
+        if (profile.loader == 'forge') {
+            srcDir rootProject.file('loaders/forge-1.20.1/src/main/java')
+        } else if (profile.loader == 'neoforge') {
+            srcDir rootProject.file('loaders/neoforge/src/main/java')
+        }
     }
     target.sourceSets.main.resources {
         srcDir rootProject.file('common/src/main/resources')
@@ -122,10 +156,16 @@ ext.configurePaidWaystones = { Project target ->
             def out = outputDir.get().asFile
             delete out
             out.mkdirs()
+            def mixinValues = [
+                java_version: profile.java,
+                common_mixins: commonMixinsFor(profile.generation as String),
+                client_mixins: clientMixinsFor(profile.generation as String)
+            ]
             copy {
-                from rootProject.file('templates/paid_waystones.mixins.json')
+                from rootProject.file('templates/waystones_item_cost_extended.mixins.json')
+                from rootProject.file('templates/waystones_item_cost_extended.client.mixins.json')
                 into out
-                expand(mixin_class: profile.generation == 'shogi' ? 'ItemCostMixin' : 'PaymentRequirementMixin", "ItemRequirementMixin", "ItemRequirementsContextMixin", "NetworkingMixin')
+                expand(mixinValues)
             }
             if (profile.loader == 'fabric') {
                 copy {
@@ -134,9 +174,7 @@ ext.configurePaidWaystones = { Project target ->
                     expand(profileValues(profile))
                 }
             } else {
-                def metadataName = profile.loader == 'neoforge' && profile.minecraft != '1.20.4'
-                    ? 'neoforge.mods.toml'
-                    : 'mods.toml'
+                def metadataName = profile.loader == 'neoforge' ? 'neoforge.mods.toml' : 'mods.toml'
                 copy {
                     from rootProject.file("templates/${profile.loader}.mods.toml")
                     into new File(out, 'META-INF')
@@ -152,7 +190,7 @@ ext.configurePaidWaystones = { Project target ->
             'Implementation-Title': 'Waystones Item Cost Extended',
             'Implementation-Version': target.version,
             'Implementation-Vendor': 'RinChan',
-            'MixinConfigs': 'paid_waystones.mixins.json'
+            'MixinConfigs': 'waystones_item_cost_extended.mixins.json,waystones_item_cost_extended.client.mixins.json'
         )
         archiveFileName = "waystones-item-cost-extended-${releaseVersion}+${profile.minecraft}-${profile.loader}.jar"
     }
@@ -161,7 +199,8 @@ ext.configurePaidWaystones = { Project target ->
 ext.profileValues = { Map selected ->
     def waystonesBase = selected.waystones.version_number.split('\\+')[0]
     def balmBase = selected.balm.version_number.split('\\+')[0]
-    def values = [
+    def isForge = selected.loader == 'forge'
+    [
         version: releaseVersion,
         minecraft_versions_json: groovy.json.JsonOutput.toJson(selected.game_versions),
         minecraft_range: minecraftRange(selected.game_versions as List<String>),
@@ -170,15 +209,15 @@ ext.profileValues = { Map selected ->
         balm_version: balmBase,
         shogi_dependency_json: selected.generation == 'shogi' ? ',\n    "shogi": ">=26.1"' : '',
         shogi_dependency_toml: selected.generation == 'shogi' ? """
-[[dependencies.waystone_emeralds]]
+[[dependencies.waystones_item_cost_extended]]
 modId="shogi"
-${selected.loader == 'forge' ? 'mandatory=true' : 'type="required"'}
+type="required"
 versionRange="[26.1,)"
 ordering="AFTER"
 side="BOTH"
 """ : '',
         loader_dependency_toml: selected.loader == 'neoforge' ? """
-[[dependencies.waystone_emeralds]]
+[[dependencies.waystones_item_cost_extended]]
 modId="neoforge"
 type="required"
 versionRange="[${selected.loader_version},)"
@@ -186,16 +225,14 @@ ordering="NONE"
 side="BOTH"
 """ : '',
         lightman_dependency_toml: selected.containsKey('lightmanscurrency') ? """
-[[dependencies.waystone_emeralds]]
+[[dependencies.waystones_item_cost_extended]]
 modId="lightmanscurrency"
-type="optional"
+${isForge ? 'mandatory=false' : 'type="optional"'}
 versionRange="[${selected.lightmanscurrency.version_number},)"
 ordering="AFTER"
 side="BOTH"
-""" : '',
-        dependency_kind: selected.loader == 'forge' ? 'mandatory=true' : 'type="required"'
+""" : ''
     ]
-    values
 }
 
 ext.minecraftRange = { List<String> versions ->

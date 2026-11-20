@@ -8,13 +8,17 @@ neoForge { neoFormVersion = libs.versions.neoForm }
 sourceSets.main.java {
     srcDir '../../common/src/main/java'
     srcDir '../../compat/none/src/main/java'
+    srcDir '../../networking/26/src/main/java'
     srcDir '../../adapters/26/src/main/java'
     srcDir '../../versions/shogi/src/main/java'
+    srcDir '../../loaders/fabric/src/main/java'
+    srcDir '../../loaders/fabric-modmenu-stub/src/main/java'
 }
 
 sourceSets.main.resources.srcDir('../../common/src/main/resources')
 
 dependencies {
+    implementation "maven.modrinth:balm:${balm_neoforge_version}"
     implementation "maven.modrinth:waystones:${waystones_neoforge_version}"
     implementation "maven.modrinth:shogi:26.1.2.8+neoforge-26.1.2"
     implementation files("../../build/profile-dependencies/shogi-api-${minecraft_version}-fabric.jar")

@@ -30,7 +30,7 @@ def profile = matrix.profiles.find { it.id == profileId }
 if (profile == null) {
     throw new GradleException("Unknown Waystones Item Cost Extended profile: ${profileId}")
 }
-gradle.ext.paidWaystonesProfile = profile
+gradle.ext.waystonesItemCostProfile = profile
 include('logic')
 
 if (!logicOnly) {
@@ -38,9 +38,9 @@ if (!logicOnly) {
     if (profile.loader == 'fabric') {
         module = 'fabric'
     } else if (profile.loader == 'forge') {
-        module = profile.minecraft in ['1.20.4', '1.20.6', '1.21'] ? 'forge-legacy' : 'forge-modern'
+        module = 'forge-legacy'
     } else {
-        module = profile.minecraft in ['1.20.4', '1.20.6'] ? 'neoforge-legacy' : 'neoforge-modern'
+        module = 'neoforge-modern'
     }
     include(module)
 }

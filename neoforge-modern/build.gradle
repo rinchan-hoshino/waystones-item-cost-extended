@@ -3,13 +3,13 @@ plugins {
     id 'net.neoforged.moddev' version '2.0.143'
 }
 
-rootProject.ext.configurePaidWaystones(project)
+rootProject.ext.configureWaystonesItemCost(project)
 def p = rootProject.ext.profile
 
 neoForge {
     version = p.loader_version
     mods {
-        waystone_emeralds {
+        waystones_item_cost_extended {
             sourceSet sourceSets.main
         }
     }
@@ -27,7 +27,7 @@ neoForge {
 def profileDependenciesDir = rootProject.ext.ensureProfileDependencies(p)
 
 dependencies {
-    if (p.id == '1.21.1-neoforge') {
+    if (p.containsKey('lightmanscurrency')) {
         compileOnly files(new File(profileDependenciesDir, "lightmanscurrency-${p.id}.jar"))
     }
     implementation files(new File(profileDependenciesDir, "balm-${p.id}.jar"))

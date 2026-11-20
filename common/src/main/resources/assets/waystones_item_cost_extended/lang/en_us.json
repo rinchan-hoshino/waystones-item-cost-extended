@@ -1,0 +1,22 @@
+{
+  "tooltip.waystones_item_cost_extended.actual_payment": "Actual payment: %s",
+  "tooltip.waystones_item_cost_extended.actual_payment_with_change": "Actual payment: %s · Change: %s",
+  "tooltip.waystones_item_cost_extended.from_wallet": "Paid via Lightman's Currency wallet / coins",
+  "tooltip.waystones_item_cost_extended.from_container": "Includes items from nested containers",
+  "tooltip.waystones_item_cost_extended.inventory_full_for_change": "Not enough inventory space for change (free %s slot(s))",
+  "tooltip.waystones_item_cost_extended.legacy_item_cost": "Item Cost: %s %s",
+  "message.waystones_item_cost_extended.inventory_full_for_change": "Not enough inventory space for change (free %s slot(s)).",
+  "message.waystones_item_cost_extended.insufficient_funds": "You do not have enough items to pay for this teleport.",
+  "screen.waystones_item_cost_extended.config.title": "Waystones Item Cost Extended",
+  "screen.waystones_item_cost_extended.config.recipe_payments": "Reversible Recipe Denominations",
+  "screen.waystones_item_cost_extended.config.search_nested": "Search Nested Containers (Bundles / Shulkers)",
+  "screen.waystones_item_cost_extended.config.show_tooltip": "Payment Preview Tooltip",
+  "screen.waystones_item_cost_extended.config.legacy_enable": "1.20.1 Custom Item Costs",
+  "screen.waystones_item_cost_extended.config.legacy_waive_xp": "1.20.1 Waive Vanilla XP Cost",
+  "screen.waystones_item_cost_extended.config.copy_example": "Copy Emerald Cost Config Example",
+  "screen.waystones_item_cost_extended.config.copied": "Copied example to clipboard!",
+  "screen.waystones_item_cost_extended.config.status.configured": "Waystones item cost rules detected",
+  "screen.waystones_item_cost_extended.config.status.not_configured": "No Waystones item cost rules detected (copy example below)",
+  "screen.waystones_item_cost_extended.config.status.legacy_enabled": "1.20.1 custom item costs enabled",
+  "screen.waystones_item_cost_extended.config.status.legacy_disabled": "1.20.1 custom item costs disabled (toggle below)"
+}

@@ -1,31 +1,28 @@
 # Changelog
 
+## 2.0.0
+
+### Breaking / Identity Convergence
+- Standardized Mod ID to `waystones_item_cost_extended` (replacing legacy `waystone_emeralds`) and unified Java package to `dev.rinchan.waystonesitemcost`.
+- Standardized Mixin configs to `waystones_item_cost_extended.mixins.json` and `waystones_item_cost_extended.client.mixins.json` with soft-degradation logging (`MixinGuard`) so unexpected Waystones/Shogi internal changes safely fall back to vanilla behavior instead of crashing.
+- Converged build matrix to 8 mainstream targets: `1.20.1` (Fabric/Forge), `1.21.1` (Fabric/NeoForge), `26.1.2` (Fabric/NeoForge), and `26.2` (Fabric/NeoForge) with zero external library dependencies.
+
+### New Features
+- **Zero-Dependency TOML Config & Lossless Migration**: Upgraded configuration to `config/waystones-item-cost-extended.toml` with hot-save support and automatic migration from legacy `.properties` (backed up to `.properties.bak`).
+- **Sensible Defaults**: Enabled `recipePayments = true`, `searchNestedContainers = true`, and `showPaymentPreviewTooltip = true` by default.
+- **Nested Container Deductions**: Deduct payment items from Bundles and Shulker Boxes inside inventory while strictly keeping returned change in ordinary inventory slots `0..35`.
+- **UI Payment Preview & Full-Inventory Diagnostics**: Added localized tooltip breakdown lines (actual payment, change returned, wallet usage, nested container usage) and explicit red warnings (`INVENTORY_FULL_FOR_CHANGE`) displaying the exact number of slots to free both in tooltips and on teleport rejection.
+- **Native Config Screen**: Added in-game Config Screen (Mod Menu on Fabric with compile-only stub, native config factory on Forge/NeoForge) featuring a Waystones item cost rule status bar and a one-click **"Copy Emerald Cost Config Example"** button.
+- **Minecraft 1.20.1 Support**: Added `[legacy_1_20_1]` custom item cost rules (base, per-km, cross-dimension, optional vanilla XP waiver) powered by `WaystoneTeleportEvent.Pre` and `WaystoneButton` rendering, sharing the exact same payment engine.
+- **Minecraft 26.x Recipe Sync**: Added Server → Client reversible crafting denomination sync for `26.1.2` and `26.2` so client previews match server datapacks.
+- **Expanded Lightman's Currency Support**: Added optional native integration for `1.20.1` (Forge) and `26.1.2` (NeoForge) alongside `1.21.1` (NeoForge).
+- **4-Language Localization & New Icon**: Added `en_us`, `zh_cn`, `zh_tw`, and `ja_jp` translations and a new original 64×64 pixel-art badge icon (exported at 512×512).
+
 ## 1.2.0
+- Added optional native Lightman's Currency integration for NeoForge 1.21.1.
 
-- Adds optional native Lightmans Currency (1.21-2.3.0.6+) support on Minecraft 1.21.1 NeoForge.
-- Supports all CoinAPI-registered currencies and custom coin chains across isolated denomination hierarchies.
-- Scans equipped native and Curios wallets via WalletHandler, main inventory, hotbar, and occupied offhand coin stacks without accessing bank balances or loose unequipped wallets.
-- Uses native CoinContainerMoneyHandler over pre-mutation snapshots for combined coin and item cost previews. Commits only after checking inventory and wallet snapshots; rollback restores touched slots and wallets once, and only when storage still matches the committed state.
-- Performs native denomination arithmetic honoring wallet auto-exchange settings, rejecting transactions during preview if change cannot fit into wallet or main inventory storage.
-- Preserves creative bypass, zero-cost routes, and recipePayments=false boundaries for reversible crafting conversions.
+## 1.1.1
+- Fixed recipe lookup cost in Waystones menu.
 
-## 1.0.2
-
-- Moves payment mutation behind a pure transaction boundary with pre-mutation plan validation.
-- Adds deterministic payment, rollback, aggregate, conservation-property, and malformed-plan tests.
-- Adds a logic-only Gradle entry point so semantic tests do not resolve Minecraft or loader projects.
-- Preserves the existing Waystones Requirement and Shogi behavior across all published loader targets.
-
-## 1.0.1
-
-- Migrates the shared payment contract to formal RinLib 1.0.0.
-- Does not change prices, payment planning, change, creative-mode behavior or Waystones integration.
-
-## 1.0.0
-
-- Added all official Waystones native-item-cost targets from Minecraft 1.20.4 through 26.2.
-- Added Fabric and Forge support alongside NeoForge where Waystones publishes those loaders.
-- Replaced the custom requirement type and client renderer with thin native-class Mixins.
-- Added the Shogi-backed item-cost adapter used by Waystones on Minecraft 26.x.
-- Moved denomination planning into RinLib 0.4.0.
-- Preserved emerald-block conversion, emerald change, creative bypass and legacy rollback behavior.
+## 1.1.0
+- Extended Waystones item payments with shared reversible crafting denominations.

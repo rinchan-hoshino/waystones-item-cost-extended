@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
-  "id": "waystone_emeralds",
+  "id": "waystones_item_cost_extended",
   "version": "${version}",
   "name": "Waystones Item Cost Extended",
-  "description": "Extend Waystones with compressed and decompressed item payments and combined item costs.",
+  "description": "Extend Waystones with reversible multi-denomination payments, nested container deductions, combined item costs, payment tooltips, and optional Lightman's Currency support.",
   "icon": "icon.png",
   "authors": ["RinChan"],
   "contact": {
@@ -13,7 +13,15 @@
   },
   "license": "GPL-3.0-or-later",
   "environment": "*",
-  "mixins": ["paid_waystones.mixins.json"],
+  "entrypoints": {
+    "modmenu": [
+      "dev.rinchan.waystonesitemcost.client.ModMenuIntegration"
+    ]
+  },
+  "mixins": [
+    "waystones_item_cost_extended.mixins.json",
+    "waystones_item_cost_extended.client.mixins.json"
+  ],
   "depends": {
     "fabricloader": ">=0.15.0",
     "minecraft": ${minecraft_versions_json},
