@@ -22,7 +22,7 @@ warpRequirements = [
 ]
 ```
 
-### Minecraft 26.1.2 & 26.2 (Fabric & NeoForge — Shogi syntax)
+### Minecraft 26.1.2, 26.2 & 26.3 (Fabric & NeoForge — Shogi syntax)
 ```toml
 warpRequirements = [
     "item_cost('minecraft:emerald', 3)",
@@ -71,7 +71,7 @@ Format: `"item_id,base_count,per_km_extra,cross_dim_extra"`. Uses the exact same
 
 ---
 
-## Supported Matrix (2.1.0)
+## Supported Matrix (2.1.1)
 
 | Minecraft | Loaders | Waystones Generation | Lightman's Currency |
 |---|---|---|---|
@@ -79,6 +79,7 @@ Format: `"item_id,base_count,per_km_extra,cross_dim_extra"`. Uses the exact same
 | `1.21.1` | Fabric, NeoForge | Requirement (`21.1.x`) | NeoForge |
 | `26.1.2` | Fabric, NeoForge | Shogi (`26.1.2.x`) | NeoForge |
 | `26.2` | Fabric, NeoForge | Shogi (`26.2.x`) | — |
+| `26.3` | Fabric, NeoForge | Shogi (`26.3.x`) | — |
 
 ---
 

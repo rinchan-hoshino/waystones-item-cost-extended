@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """
-Unified build & verification matrix for Waystones Item Cost Extended 2.0.0.
-Builds and audits all 8 golden target JARs plus JUnit 5 logic tests.
+Unified build & verification matrix for Waystones Item Cost Extended 2.1.1.
+Builds and audits all 10 golden target JARs plus JUnit 5 logic tests.
 
 Usage:
-  python3 scripts/build-matrix.py                 # Run tests + build & verify all 8 targets
+  python3 scripts/build-matrix.py                 # Run tests + build & verify all 10 targets
   python3 scripts/build-matrix.py 1.21.1-neoforge # Build & verify specific target(s)
 """
 
@@ -225,11 +225,12 @@ def build_profile(profile: dict, mod_version: str) -> Path:
         )
         produced = fc_dir / "fabric" / "build" / "libs" / expected_name
     else:
-        # 1.20.1-fabric, 1.21.1-fabric, 26.2-fabric via fabric/
+        # 1.20.1-fabric, 1.21.1-fabric, 26.2-fabric, 26.3-fabric via fabric/
         fab_dir = ROOT / "fabric"
         gradle9 = detect_gradle_9()
-        loom_ver = "1.17.20" if mc == "26.2" else "1.14.10"
-        task = "jar" if mc == "26.2" else "remapJar"
+        is_unobf_26 = mc in ("26.2", "26.3")
+        loom_ver = "1.17.20" if is_unobf_26 else "1.14.10"
+        task = "jar" if is_unobf_26 else "remapJar"
         props = [
             f"-Pminecraft_version={mc}",
             f"-Ploader_version={profile['loader_version']}",
@@ -251,7 +252,7 @@ def build_profile(profile: dict, mod_version: str) -> Path:
             cwd=fab_dir,
             java_version=max(21, java_ver),
         )
-        libs_dir = fab_dir / "build" / ("devlibs" if mc == "26.2" else "libs")
+        libs_dir = fab_dir / "build" / ("devlibs" if is_unobf_26 else "libs")
         produced = libs_dir / expected_name
         if not produced.exists():
             # Loom remapJar may output archivesName-version.jar
@@ -304,6 +305,18 @@ def audit_jar(jar_path: Path, profile: dict, mod_version: str) -> None:
             if bad in meta.lower():
                 raise AssertionError(f"{jar_path.name} metadata contains forbidden token '{bad}'")
 
+        if loader == "forge":
+            assert "pack.mcmeta" in names, f"{jar_path.name} missing pack.mcmeta"
+            pack_meta = json.loads(zf.read("pack.mcmeta").decode("utf-8"))
+            assert (
+                pack_meta.get("pack", {}).get("pack_format") == 15
+            ), f"{jar_path.name} pack.mcmeta must have pack_format == 15, got {pack_meta}"
+        elif "pack.mcmeta" in names:
+            pack_meta = json.loads(zf.read("pack.mcmeta").decode("utf-8"))
+            assert (
+                pack_meta.get("pack", {}).get("pack_format") != 15
+            ), f"{jar_path.name} must NOT contain pack_format == 15 pack.mcmeta"
+
         class_count = sum(1 for n in names if n.endswith(".class"))
         if class_count < 8:
             raise AssertionError(f"{jar_path.name} has suspiciously few classes: {class_count}")
@@ -326,6 +339,9 @@ def main() -> int:
             return 2
     else:
         profiles = all_profiles
+        if RELEASE_DIR.exists():
+            for old_jar in RELEASE_DIR.glob("*.jar"):
+                old_jar.unlink()
         run_logic_tests()
 
     results: list[tuple[str, Path]] = []

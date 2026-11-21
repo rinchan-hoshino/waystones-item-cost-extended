@@ -165,7 +165,7 @@ public final class PaymentConfig {
 
     public static String renderToml(Data data) {
         var sb = new StringBuilder();
-        sb.append("# Waystones Item Cost Extended 2.1.0 Configuration\n");
+        sb.append("# Waystones Item Cost Extended 2.1.1 Configuration\n");
         sb.append("# Changes saved via the in-game config screen take effect immediately.\n\n");
         sb.append("# Allow items linked by reversible lossless crafting recipes (e.g. nugget <-> ingot <-> block)\n");
         sb.append("# to pay item costs with automatic greedy high-denomination change.\n");

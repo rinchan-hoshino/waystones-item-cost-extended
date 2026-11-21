@@ -1,5 +1,5 @@
 {
-  "mod_version": "2.1.0",
+  "mod_version": "2.1.1",
   "profiles": [
     {
       "id": "1.20.1-fabric",
@@ -217,6 +217,62 @@
         "version_number": "26.2.0.5+neoforge-26.2",
         "url": "https://cdn.modrinth.com/data/bi4iCmsw/versions/1EnqqRIV/shogi-neoforge-26.2-26.2.0.5.jar",
         "sha512": "a307e8e7e627aed9128ee84ea1bade9fbd609a4547c69d2ed2b6be0dca958dcdfd416200c758fc97cbf160ae2e4bb3a2023665b377a6065b703495d78a76268e"
+      }
+    },
+    {
+      "id": "26.3-fabric",
+      "minecraft": "26.3",
+      "game_versions": ["26.3"],
+      "loader": "fabric",
+      "generation": "shogi",
+      "java": 25,
+      "loader_version": "0.20.1",
+      "fabric_api": "0.166.2+26.3",
+      "waystones": {
+        "version_id": "prbIOsDC",
+        "version_number": "26.3.0.3+fabric-26.3",
+        "url": "https://cdn.modrinth.com/data/LOpKHB2A/versions/prbIOsDC/waystones-fabric-26.3-26.3.0.3.jar",
+        "sha512": "1b4d1208382f4568f83341c7cc412354beb5c360e4f0bf0718615908e05a4a6eddc1abca8e3a7b233d273d5d95f93dff7f954072e4939f97edb8180021e83619"
+      },
+      "balm": {
+        "version_id": "MYj31XNG",
+        "version_number": "26.3.0.3+fabric-26.3",
+        "url": "https://cdn.modrinth.com/data/MBAkmtvl/versions/MYj31XNG/balm-fabric-26.3-26.3.0.3.jar",
+        "sha512": "aaf07f5b94f7015c87df7b242f3f45f0729fb3f72d887745ad5c5ceb31eb071e425254009158774101676d6480f31c832dd60860d79da5b661cc10b84241c319"
+      },
+      "shogi": {
+        "version_id": "9gkJoFhj",
+        "version_number": "26.3.0.3+fabric-26.3",
+        "url": "https://cdn.modrinth.com/data/bi4iCmsw/versions/9gkJoFhj/shogi-fabric-26.3-26.3.0.3.jar",
+        "sha512": "f050b6360b188a82ca7e3fbb0d00eff4c02b9b39bc991fbddcf4a3588f594887d15f6421e50d5a7452a53ec35d44ec9b325d7826f77393af9543fe3383cb142d"
+      }
+    },
+    {
+      "id": "26.3-neoforge",
+      "minecraft": "26.3",
+      "game_versions": ["26.3"],
+      "loader": "neoforge",
+      "generation": "shogi",
+      "java": 25,
+      "loader_version": "26.3.0.115",
+      "fabric_api": null,
+      "waystones": {
+        "version_id": "CEfraVFf",
+        "version_number": "26.3.0.3+neoforge-26.3",
+        "url": "https://cdn.modrinth.com/data/LOpKHB2A/versions/CEfraVFf/waystones-neoforge-26.3-26.3.0.3.jar",
+        "sha512": "e8cfb01cd6bb9c11144206c663a9303f3ad14504b38998dad57a23231378af4f140cf2fddcbe30c7c1193f576a794569184a5f8932e9db6a32cf09e066e3cf59"
+      },
+      "balm": {
+        "version_id": "QcBcRJZb",
+        "version_number": "26.3.0.3+neoforge-26.3",
+        "url": "https://cdn.modrinth.com/data/MBAkmtvl/versions/QcBcRJZb/balm-neoforge-26.3-26.3.0.3.jar",
+        "sha512": "7e741916eb3893f5732902cbda274284ef32aad9bcf0686fe0321fc43323061c8ae7fedaed574e613623fced59150f6237ddbfa6e6dd3339fef06798b91f3f6e"
+      },
+      "shogi": {
+        "version_id": "wFw6qDQV",
+        "version_number": "26.3.0.3+neoforge-26.3",
+        "url": "https://cdn.modrinth.com/data/bi4iCmsw/versions/wFw6qDQV/shogi-neoforge-26.3-26.3.0.3.jar",
+        "sha512": "51e57e3f262ad3e055245486a8ea3376db42eee93024492f38554fafae6e75c966df05442ddf96369bff6c8d11415258e2bac8c7b747bb4de40885dfa8e7c05d"
       }
     }
   ]

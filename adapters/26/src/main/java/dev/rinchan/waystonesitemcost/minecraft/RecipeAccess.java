@@ -61,7 +61,7 @@ public final class RecipeAccess {
         if (container.isEmpty()) return null;
         BundleContents bundle = container.get(DataComponents.BUNDLE_CONTENTS);
         if (bundle != null && !bundle.isEmpty()) {
-            return new ArrayList<>(bundle.itemCopyStream().toList());
+            return new ArrayList<>(bundle.items().stream().map(ItemStackTemplate::create).toList());
         }
         ItemContainerContents box = container.get(DataComponents.CONTAINER);
         if (box != null && box != ItemContainerContents.EMPTY) {

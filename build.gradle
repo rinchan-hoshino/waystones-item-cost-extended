@@ -181,6 +181,13 @@ ext.configureWaystonesItemCost = { Project target ->
                     rename { metadataName }
                     expand(profileValues(profile))
                 }
+                if (profile.loader == 'forge') {
+                    copy {
+                        from rootProject.file('templates/forge.pack.mcmeta')
+                        into out
+                        rename { 'pack.mcmeta' }
+                    }
+                }
             }
         }
     }

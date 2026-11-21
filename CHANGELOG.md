@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.1.1
+
+- **Minecraft 26.3 Support**: Added `26.3` (Fabric & NeoForge) targets using the `shogi` generation layer, expanding the release matrix to 10 targets.
+- **1.20.1 Forge `pack.mcmeta` Fix (Issue #3)**: Included a valid `pack.mcmeta` (`pack_format: 15`) in the `1.20.1` Forge JAR root so Forge 47 loads mod resources cleanly without `failed to load a valid ResourcePackInfo` warnings.
+
 ## 2.1.0
 
 ### Physics Sub-World Waystone Distance Support (Sable / Create: Aeronautics / Simurail & Valkyrien Skies 2)
