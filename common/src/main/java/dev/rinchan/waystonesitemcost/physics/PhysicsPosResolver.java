@@ -2,9 +2,9 @@ package dev.rinchan.waystonesitemcost.physics;
 
 import dev.rinchan.waystonesitemcost.config.PaymentConfig;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
@@ -20,13 +20,14 @@ import net.minecraft.world.phys.Vec3;
  * Dedicated-server safe: contains zero client-only class references.
  */
 public final class PhysicsPosResolver {
-    private static final ConcurrentHashMap<UUID, PhysicsPosCore.CachedWorldPos> CLIENT_CACHE = new ConcurrentHashMap<>();
+    private static volatile Map<UUID, PhysicsPosCore.CachedWorldPos> clientCache = Collections.emptyMap();
 
     private static final PhysicsPosCore.PosCache CLIENT_CACHE_VIEW = new PhysicsPosCore.PosCache() {
         @Override
         public PhysicsPosCore.Vec3d get(UUID waystoneUid, String dimension) {
-            if (CLIENT_CACHE.isEmpty()) return null;
-            var entry = CLIENT_CACHE.get(waystoneUid);
+            Map<UUID, PhysicsPosCore.CachedWorldPos> cache = clientCache;
+            if (cache.isEmpty()) return null;
+            var entry = cache.get(waystoneUid);
             if (entry != null && entry.dimension().equals(dimension)) {
                 return entry.toVec3d();
             }
@@ -70,7 +71,7 @@ public final class PhysicsPosResolver {
             : null;
 
         // Fast path: no physics mod loaded AND no cached entries -> pure vanilla distance
-        if (projector == null && (level.isClientSide() ? CLIENT_CACHE.isEmpty() : isStorageEmpty(cache))) {
+        if (projector == null && (level.isClientSide() ? clientCache.isEmpty() : isStorageEmpty(cache))) {
             return Math.sqrt(entity.distanceToSqr(targetCenter));
         }
 
@@ -132,6 +133,13 @@ public final class PhysicsPosResolver {
         );
     }
 
+    public static PhysicsPosCore.Vec3d getCachedWorldPos(MinecraftServer server, UUID waystoneUid, ResourceKey<Level> dimension) {
+        if (server == null || waystoneUid == null || dimension == null) {
+            return null;
+        }
+        return PhysicsPosStorage.get(server).get(waystoneUid, PhysicsPosStorage.dimensionId(dimension));
+    }
+
     public static Map<UUID, PhysicsPosCore.CachedWorldPos> snapshotServerEntries(MinecraftServer server) {
         if (server == null) {
             return Collections.emptyMap();
@@ -140,9 +148,10 @@ public final class PhysicsPosResolver {
     }
 
     public static void receiveClientSync(Map<UUID, PhysicsPosCore.CachedWorldPos> entries) {
-        CLIENT_CACHE.clear();
-        if (entries != null && !entries.isEmpty()) {
-            CLIENT_CACHE.putAll(entries);
+        if (entries == null || entries.isEmpty()) {
+            clientCache = Collections.emptyMap();
+        } else {
+            clientCache = Collections.unmodifiableMap(new LinkedHashMap<>(entries));
         }
     }
 

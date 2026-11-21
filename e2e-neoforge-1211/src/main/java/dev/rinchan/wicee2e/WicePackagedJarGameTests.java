@@ -1,14 +1,19 @@
 package dev.rinchan.wicee2e;
 
 import com.mojang.authlib.GameProfile;
+import com.mojang.datafixers.util.Either;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicReference;
 import net.blay09.mods.waystones.api.Waystone;
 import net.blay09.mods.waystones.api.WaystoneOrigin;
 import net.blay09.mods.waystones.api.WaystoneStyles;
 import net.blay09.mods.waystones.api.WaystonesAPI;
+import net.blay09.mods.waystones.api.error.WaystoneTeleportError;
 import net.blay09.mods.waystones.config.WaystonesConfig;
 import net.blay09.mods.waystones.core.WaystoneImpl;
 import net.minecraft.ChatFormatting;
@@ -23,18 +28,22 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.component.BundleContents;
 import net.minecraft.world.item.component.ItemContainerContents;
+import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Blocks;
 import net.neoforged.fml.ModList;
 import net.neoforged.neoforge.common.util.FakePlayer;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
+import org.joml.Vector3d;
 
 /**
  * Packaged-JAR black-box E2E GameTests running on real Minecraft 1.21.1 NeoForge with
@@ -353,5 +362,171 @@ public final class WicePackagedJarGameTests {
             teleports.warpRequirements = prevRequirements;
         }
         helper.succeed();
+    }
+
+    @GameTest(template = TEMPLATE, timeoutTicks = 200)
+    public static void sableRealAirshipWaystoneDistanceAndUnloadedWakeup(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        var pair = placeTwoWaystones(helper);
+        var player = createPlayerAtSource(helper, pair, "E2ESableAirship");
+        BlockPos srcPos = pair.source().getPos();
+        double targetWorldX = srcPos.getX() + 120.5;
+        double targetWorldY = srcPos.getY() + 0.5;
+        double targetWorldZ = srcPos.getZ() - 80.5;
+
+        if (!ModList.get().isLoaded("sable")) {
+            // Standard CI run without Sable JAR: verify tryTeleportAsync succeeds cleanly with zero regressions.
+            player.getInventory().setItem(0, new ItemStack(Items.EMERALD_BLOCK, 1));
+            var ctx = WaystonesAPI.createDefaultTeleportContext(player, pair.target(), c -> c.setFromWaystone(pair.source()))
+                .left()
+                .orElseThrow(() -> new AssertionError("Failed to build async teleport context"));
+            AtomicReference<Either<List<Entity>, WaystoneTeleportError>> resultRef = new AtomicReference<>();
+            WaystonesAPI.tryTeleportAsync(ctx).thenAccept(resultRef::set);
+            helper.succeedWhen(() -> {
+                var res = resultRef.get();
+                helper.assertTrue(res != null, "Waiting for async teleport completion");
+                helper.assertTrue(res.left().isPresent(), "Async teleport failed: " + res.right());
+            });
+            return;
+        }
+
+        try {
+            // 1. Verify PhysicsModBridge detected real Sable 2.0.6 with zero signature mismatches
+            Class<?> bridgeClass = Class.forName("dev.rinchan.waystonesitemcost.physics.PhysicsModBridge");
+            boolean sableLoaded = (boolean) bridgeClass.getMethod("isSableLoaded").invoke(null);
+            helper.assertTrue(sableLoaded, "PhysicsModBridge.isSableLoaded() MUST be true when real Sable 2.0.6 JAR is loaded!");
+
+            // 2. Allocate a real Sable ServerSubLevel at world coordinates (120.5, 70.5, -80.5)
+            // Use MethodHandles.publicLookup() instead of Class.getMethod to avoid resolving ClientLevel sibling overloads on Dedicated Server.
+            MethodHandles.Lookup lookup = MethodHandles.publicLookup();
+            Class<?> containerClass = Class.forName("dev.ryanhcode.sable.api.sublevel.SubLevelContainer");
+            Class<?> subLevelClass = Class.forName("dev.ryanhcode.sable.sublevel.SubLevel");
+            Class<?> poseClass = Class.forName("dev.ryanhcode.sable.companion.math.Pose3d");
+            Object container = lookup.findStatic(containerClass, "getContainer", MethodType.methodType(containerClass, Level.class))
+                .invoke(level);
+            helper.assertTrue(container != null, "Sable SubLevelContainer.getContainer(level) must not be null");
+
+            Object pose = poseClass.getDeclaredConstructor().newInstance();
+            Object subLevel = lookup.findVirtual(containerClass, "allocateNewSubLevel", MethodType.methodType(subLevelClass, poseClass))
+                .invoke(container, pose);
+            helper.assertTrue(subLevel != null, "allocateNewSubLevel must return a ServerSubLevel");
+
+            Object plot = subLevel.getClass().getMethod("getPlot").invoke(subLevel);
+            BlockPos plotCenter = (BlockPos) plot.getClass().getMethod("getCenterBlock").invoke(plot);
+            BlockPos plotWaystonePos = new BlockPos(plotCenter.getX(), 70, plotCenter.getZ());
+
+            // Ensure the Plot chunk exists in Sable before placing blocks inside it
+            Class<?> levelPlotClass = Class.forName("dev.ryanhcode.sable.sublevel.plot.LevelPlot");
+            ChunkPos plotChunk = new ChunkPos(plotWaystonePos);
+            lookup.findVirtual(levelPlotClass, "newEmptyChunk", MethodType.methodType(void.class, ChunkPos.class))
+                .invoke(plot, plotChunk);
+
+            // Build a small 3x3 stone deck inside the Sable Plot and place a real Waystone on it
+            for (int dx = -1; dx <= 1; dx++) {
+                for (int dz = -1; dz <= 1; dz++) {
+                    level.setBlockAndUpdate(plotWaystonePos.offset(dx, -1, dz), Blocks.STONE.defaultBlockState());
+                }
+            }
+            Waystone shipWaystone = WaystonesAPI.placeWaystone(level, plotWaystonePos, WaystoneStyles.DEFAULT)
+                .orElseThrow(() -> new AssertionError("Failed to place real Waystone inside Sable Plot at " + plotWaystonePos));
+
+            // Configure Pose3d AFTER block placement so plotWaystonePos projects directly to world (targetWorldX, targetWorldY, targetWorldZ)
+            Object logicalPose = subLevel.getClass().getMethod("logicalPose").invoke(subLevel);
+            Vector3d rotPoint = (Vector3d) logicalPose.getClass().getMethod("rotationPoint").invoke(logicalPose);
+            Vector3d worldPosVec = (Vector3d) logicalPose.getClass().getMethod("position").invoke(logicalPose);
+            rotPoint.set(plotWaystonePos.getX() + 0.5, plotWaystonePos.getY() + 0.5, plotWaystonePos.getZ() + 0.5);
+            worldPosVec.set(targetWorldX, targetWorldY, targetWorldZ);
+            subLevel.getClass().getMethod("forceUpdateGlobalBounds").invoke(subLevel);
+
+            // 3. Verify live Sable Plot detection and exact real-world projection
+            boolean inPlot = (boolean) bridgeClass.getMethod("isInPhysicsSpace", Level.class, double.class, double.class, double.class)
+                .invoke(null, level, plotWaystonePos.getX() + 0.5, plotWaystonePos.getY() + 0.5, plotWaystonePos.getZ() + 0.5);
+            helper.assertTrue(inPlot, "isInPhysicsSpace must return true for Sable Plot pos " + plotWaystonePos);
+
+            Object projected = bridgeClass.getMethod("projectToWorld", Level.class, double.class, double.class, double.class)
+                .invoke(null, level, plotWaystonePos.getX() + 0.5, plotWaystonePos.getY() + 0.5, plotWaystonePos.getZ() + 0.5);
+            helper.assertTrue(projected != null, "projectToWorld must project live Sable Plot pos");
+            double px = (double) projected.getClass().getMethod("x").invoke(projected);
+            double py = (double) projected.getClass().getMethod("y").invoke(projected);
+            double pz = (double) projected.getClass().getMethod("z").invoke(projected);
+            helper.assertTrue(Math.abs(px - targetWorldX) < 1.0 && Math.abs(py - targetWorldY) < 1.0 && Math.abs(pz - targetWorldZ) < 1.0,
+                "Expected projected world pos ~(" + targetWorldX + ", " + targetWorldY + ", " + targetWorldZ + "), got (" + px + ", " + py + ", " + pz + ")");
+
+            // 4. Refresh server cache & verify realistic distance cost (~144 blocks -> 1..4 emeralds, NOT 57957!)
+            Class<?> resolverClass = Class.forName("dev.rinchan.waystonesitemcost.physics.PhysicsPosResolver");
+            resolverClass.getMethod("refreshWaystoneOnServer", MinecraftServer.class, UUID.class, ResourceKey.class, BlockPos.class)
+                .invoke(null, level.getServer(), shipWaystone.getWaystoneUid(), shipWaystone.getDimension(), shipWaystone.getPos());
+
+            player.getInventory().setItem(0, new ItemStack(Items.EMERALD_BLOCK, 1));
+            var teleports = WaystonesConfig.getActive().teleports;
+            boolean prevEnableCosts = teleports.enableCosts;
+            boolean prevEnableCooldowns = teleports.enableCooldowns;
+            List<String> prevRequirements = teleports.warpRequirements;
+            teleports.enableCosts = true;
+            teleports.enableCooldowns = false;
+            teleports.warpRequirements = new ArrayList<>(List.of(
+                "add_item_cost(minecraft:emerald, 1)",
+                "scaled_add_item_cost(distance, minecraft:emerald, 0.01)",
+                "[is_not_within_distance(500)] add_item_cost(minecraft:emerald, 9999)"
+            ));
+
+            var ctx = WaystonesAPI.createUncheckedDefaultTeleportContext(player, shipWaystone, c -> c.setFromWaystone(pair.source()))
+                .left()
+                .orElseThrow(() -> new AssertionError("Failed to create teleport context for Sable airship waystone"));
+            var req = WaystonesAPI.resolveRequirements(ctx);
+            helper.assertTrue(req.canAfford(player),
+                "Real Sable airship Waystone must be affordable with 1 emerald block (~144m real distance)");
+
+            // 5. Simulate long-unloaded airship chunk: move ServerSubLevel into Sable's SubLevelHoldingChunkMap
+            ChunkPos worldChunk = new ChunkPos(BlockPos.containing(targetWorldX, targetWorldY, targetWorldZ));
+            Class<?> serverContainerClass = Class.forName("dev.ryanhcode.sable.api.sublevel.ServerSubLevelContainer");
+            Class<?> holdingMapClass = Class.forName("dev.ryanhcode.sable.sublevel.storage.holding.SubLevelHoldingChunkMap");
+            Object holdingMap = lookup.findVirtual(serverContainerClass, "getHoldingChunkMap", MethodType.methodType(holdingMapClass))
+                .invoke(container);
+            Class<?> serverSubLevelClass = Class.forName("dev.ryanhcode.sable.sublevel.ServerSubLevel");
+            lookup.findVirtual(holdingMapClass, "moveToUnloaded", MethodType.methodType(void.class, serverSubLevelClass, ChunkPos.class))
+                .invoke(holdingMap, subLevel, worldChunk);
+
+            // Confirm the SubLevel is genuinely unloaded (projectToWorld == null; plot chunk itself may remain cached in test ServerChunkCache)
+            Object afterUnloadProj = bridgeClass.getMethod("projectToWorld", Level.class, double.class, double.class, double.class)
+                .invoke(null, level, plotWaystonePos.getX() + 0.5, plotWaystonePos.getY() + 0.5, plotWaystonePos.getZ() + 0.5);
+            helper.assertTrue(afterUnloadProj == null, "SubLevel must be unloaded before wakeup test");
+
+            // 6. Execute real WaystonesAPI.tryTeleportAsync -> must wake SubLevel, pass isValidInLevel, deduct realistic fee, and succeed!
+            AtomicReference<Either<List<Entity>, WaystoneTeleportError>> resultRef = new AtomicReference<>();
+            WaystonesAPI.tryTeleportAsync(ctx).thenAccept(resultRef::set);
+
+            helper.succeedWhen(() -> {
+                var res = resultRef.get();
+                helper.assertTrue(res != null, "Waiting for Sable unloaded-airship async teleport completion");
+                try {
+                    helper.assertTrue(res.left().isPresent(),
+                        "Unloaded Sable airship teleport MUST succeed without MissingWaystone! Error: " + res.right());
+                    Object afterWakeProj = bridgeClass.getMethod("projectToWorld", Level.class, double.class, double.class, double.class)
+                        .invoke(null, level, plotWaystonePos.getX() + 0.5, plotWaystonePos.getY() + 0.5, plotWaystonePos.getZ() + 0.5);
+                    helper.assertTrue(afterWakeProj != null,
+                        "SubLevel must be woken up and projected again after teleport");
+                    int blocksLeft = countInMainInventory(player.getInventory(), Items.EMERALD_BLOCK);
+                    int emeraldsLeft = countInMainInventory(player.getInventory(), Items.EMERALD);
+                    int paid = 9 - (blocksLeft * 9 + emeraldsLeft);
+                    helper.assertTrue(paid >= 1 && paid <= 4,
+                        "Expected realistic fee 1..4 emeralds for ~144m airship teleport, paid " + paid);
+                } catch (Throwable t) {
+                    if (t instanceof AssertionError ae) {
+                        throw ae;
+                    }
+                    throw new AssertionError("Failed to verify post-wakeup Sable projection", t);
+                } finally {
+                    teleports.enableCosts = prevEnableCosts;
+                    teleports.enableCooldowns = prevEnableCooldowns;
+                    teleports.warpRequirements = prevRequirements;
+                }
+            });
+        } catch (Throwable e) {
+            if (e instanceof AssertionError ae) {
+                throw ae;
+            }
+            throw new AssertionError("Real Sable 2.0.6 E2E reflection setup failed", e);
+        }
     }
 }

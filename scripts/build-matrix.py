@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Unified build & verification matrix for Waystones Item Cost Extended 2.1.1.
+Unified build & verification matrix for Waystones Item Cost Extended 2.1.2.
 Builds and audits all 10 golden target JARs plus JUnit 5 logic tests.
 
 Usage:

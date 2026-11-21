@@ -1,4 +1,4 @@
-# Feature Map — Waystones Item Cost Extended 2.1.1
+# Feature Map — Waystones Item Cost Extended 2.1.2
 
 ## 1. Module & Package Architecture (`dev.rinchan.waystonesitemcost`)
 

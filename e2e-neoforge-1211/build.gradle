@@ -51,6 +51,17 @@ dependencies {
     // Real final packaged release JAR (runtimeOnly -> ZERO compile access to mod internals!)
     runtimeOnly files(packagedModJar)
 
+    // Optional real Sable JAR for physics sub-world E2E verification (-PsableJar=/path/to/sable-*.jar)
+    def sableJarPath = providers.gradleProperty('sableJar').orNull
+    if (sableJarPath != null && !sableJarPath.trim().isEmpty()) {
+        def sableFile = file(sableJarPath)
+        if (!sableFile.exists()) {
+            throw new GradleException("Configured sableJar does not exist: ${sableFile}")
+        }
+        runtimeOnly files(sableFile)
+        testRuntimeOnly files(sableFile)
+    }
+
     testImplementation platform('org.junit:junit-bom:5.10.2')
     testImplementation 'org.junit.jupiter:junit-jupiter'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'

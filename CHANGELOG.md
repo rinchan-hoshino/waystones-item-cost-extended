@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.1.2
+
+- **Sable 2.0.x Compatibility Fix**: Fixed `PhysicsModBridge` method-handle resolution against Sable 2.0.x's `ActiveSableCompanion` (`getContaining(Level, Vec3i)` / `(Level, Position)`) and `dev.ryanhcode.sable.api.sublevel.SubLevelContainer.getContainer(Level)` so airship/contraption Waystones accurately project to real-world coordinates in both client tooltips and server payments.
+- **Unloaded Airship Sub-Level Wakeup on Teleport (`1.21.1`)**: Added automatic world-chunk ticket loading and Sable `SubLevelHoldingChunkMap` wakeup in `WaystoneTeleportEvent.Prepare` so teleporting to an airship Waystone whose chunk has been unloaded for a long time reliably wakes the sub-level instead of failing with a missing-waystone error.
+- **Continuous Position Sync & Lock-Free Client Cache**: Added periodic server-side position refresh for active physics-space Waystones so moving airships keep their cached world coordinates fresh before unloading, and made client S2C cache updates atomic.
+
 ## 2.1.1
 
 - **Minecraft 26.3 Support**: Added `26.3` (Fabric & NeoForge) targets using the `shogi` generation layer, expanding the release matrix to 10 targets.

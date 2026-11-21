@@ -71,7 +71,7 @@ Format: `"item_id,base_count,per_km_extra,cross_dim_extra"`. Uses the exact same
 
 ---
 
-## Supported Matrix (2.1.1)
+## Supported Matrix (2.1.2)
 
 | Minecraft | Loaders | Waystones Generation | Lightman's Currency |
 |---|---|---|---|
