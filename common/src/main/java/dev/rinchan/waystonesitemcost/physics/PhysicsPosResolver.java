@@ -75,6 +75,21 @@ public final class PhysicsPosResolver {
             return Math.sqrt(entity.distanceToSqr(targetCenter));
         }
 
+        // Server cold-start path: if target is inside an unloaded Sable Plot with no cached world pos yet,
+        // resolve its parked world coordinate from Sable's offline storage before computing distance.
+        if (level instanceof ServerLevel serverLevel
+            && targetUid != null
+            && PhysicsModBridge.isAnyPhysicsModLoaded()
+            && cache.get(targetUid, targetDimId) == null) {
+            ResourceKey<Level> resolvedTargetDim = targetDim != null ? targetDim : level.dimension();
+            ServerLevel targetLevel = serverLevel.getServer().getLevel(resolvedTargetDim);
+            if (targetLevel != null
+                && PhysicsModBridge.isInPhysicsSpace(targetLevel, targetCenter.x, targetCenter.y, targetCenter.z)
+                && PhysicsModBridge.projectToWorld(targetLevel, targetCenter.x, targetCenter.y, targetCenter.z) == null) {
+                resolveOfflineLocationOnServer(serverLevel.getServer(), targetUid, resolvedTargetDim, targetPos);
+            }
+        }
+
         Vec3 origin = entity.position();
         return PhysicsPosCore.resolveDistance(
             new PhysicsPosCore.Vec3d(origin.x, origin.y, origin.z),
@@ -106,9 +121,61 @@ public final class PhysicsPosResolver {
         }
         Vec3 center = Vec3.atCenterOf(pos);
         PhysicsPosCore.Vec3d projected = PhysicsModBridge.projectToWorld(level, center.x, center.y, center.z);
+        String dimId = PhysicsPosStorage.dimensionId(dimension);
+        PhysicsPosStorage storage = PhysicsPosStorage.get(server);
         if (projected != null) {
-            PhysicsPosStorage.get(server).put(waystoneUid, PhysicsPosStorage.dimensionId(dimension), projected);
+            storage.put(waystoneUid, dimId, projected);
+            return;
         }
+        if (storage.get(waystoneUid, dimId) == null
+            && PhysicsModBridge.isInPhysicsSpace(level, center.x, center.y, center.z)) {
+            PhysicsPosCore.Vec3d offline = PhysicsModBridge.projectOfflineSableToWorld(level, center.x, center.y, center.z);
+            if (offline != null) {
+                storage.put(waystoneUid, dimId, offline);
+            }
+        }
+    }
+
+    /**
+     * Resolves an unloaded Sable SubLevel's parked world position and holding chunk directly from
+     * Sable's holding map / offline storage, persisting the world position into {@link PhysicsPosStorage}.
+     */
+    public static PhysicsModBridge.OfflineSubLevelLocation resolveOfflineLocationOnServer(
+        MinecraftServer server,
+        UUID waystoneUid,
+        ResourceKey<Level> dimension,
+        BlockPos pos
+    ) {
+        if (server == null || waystoneUid == null || dimension == null || pos == null) {
+            return null;
+        }
+        if (!PaymentConfig.fixPhysicsShipDistance() || !PhysicsModBridge.isAnyPhysicsModLoaded()) {
+            return null;
+        }
+        ServerLevel level = server.getLevel(dimension);
+        if (level == null) {
+            return null;
+        }
+        Vec3 center = Vec3.atCenterOf(pos);
+        PhysicsModBridge.OfflineSubLevelLocation loc = PhysicsModBridge.resolveOfflineSable(level, center.x, center.y, center.z);
+        if (loc != null && loc.worldPos() != null) {
+            PhysicsPosStorage.get(server).put(waystoneUid, PhysicsPosStorage.dimensionId(dimension), loc.worldPos());
+        }
+        return loc;
+    }
+
+    public static void removeServerPosition(MinecraftServer server, UUID waystoneUid) {
+        if (server == null || waystoneUid == null) {
+            return;
+        }
+        PhysicsPosStorage.get(server).remove(waystoneUid);
+    }
+
+    public static void clearServerCache(MinecraftServer server) {
+        if (server != null) {
+            PhysicsPosStorage.get(server).clear();
+        }
+        PhysicsModBridge.clearOfflineCaches();
     }
 
     /**

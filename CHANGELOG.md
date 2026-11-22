@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.1.3
+
+- **Balm 21.0.67 NeoForge `ServerTickEvent` Fix**: Replaced `Balm.getEvents().onTickEvent(TickType.Server, ...)` (which registers the abstract `ServerTickEvent` class on Balm 21.0.67 / NeoForge 1.21.1 and throws `IllegalArgumentException`) with loader-native server tick hooks (`NeoForge.EVENT_BUS` `ServerTickEvent.Post`, Fabric `ServerTickEvents.END_SERVER_TICK`, Forge `TickEvent.ServerTickEvent`) and isolated every registration in `NetworkingMixin` and `PhysicsPosSync` with independent `MixinGuard` guards.
+- **Sable Cold-Start Offline Airship Resolution & Wakeup**: Added zero-warmup offline resolution for unloaded Sable SubLevels (`SubLevelContainer` occupancy check + in-memory `SubLevelHoldingChunkMap` inspection + read-only `world/sublevels/*.slvls` NBT scanner with negative-result TTL caching). Even after a fresh server restart with an empty `PhysicsPosStorage` cache, opening a Waystone menu displays the real airship distance (never `0m`) and clicking teleport resolves the holding chunk, wakes the unloaded airship SubLevel, and completes the teleport cleanly.
+
 ## 2.1.2
 
 - **Sable 2.0.x Compatibility Fix**: Fixed `PhysicsModBridge` method-handle resolution against Sable 2.0.x's `ActiveSableCompanion` (`getContaining(Level, Vec3i)` / `(Level, Position)`) and `dev.ryanhcode.sable.api.sublevel.SubLevelContainer.getContainer(Level)` so airship/contraption Waystones accurately project to real-world coordinates in both client tooltips and server payments.

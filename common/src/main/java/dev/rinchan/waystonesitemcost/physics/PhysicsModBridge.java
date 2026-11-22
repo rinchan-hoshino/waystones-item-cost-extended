@@ -6,9 +6,16 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.BitSet;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Position;
 import net.minecraft.core.Vec3i;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
@@ -39,6 +46,55 @@ public final class PhysicsModBridge {
     private static MethodHandle sableGetHoldingChunkMap;
     private static MethodHandle sableHoldingUpdateChunkStatus;
     private static MethodHandle sableHoldingProcessChanges;
+    private static MethodHandle sableContainerGetLogPlotSize;
+    private static MethodHandle sableContainerGetOrigin;
+    private static MethodHandle sableContainerGetIndex;
+    private static MethodHandle sableContainerGetOccupancy;
+    private static MethodHandle jomlVec2iX;
+    private static MethodHandle jomlVec2iY;
+    private static MethodHandle sableHoldingGetStorage;
+    private static MethodHandle sableStorageGetFolder;
+    private static Field sableHoldingAllSubLevelsField;
+    private static MethodHandle sableHoldingSubLevelData;
+    private static MethodHandle sableHoldingSubLevelPointer;
+    private static MethodHandle sablePointerChunkPos;
+    private static MethodHandle sableDataFullTag;
+    private static MethodHandle sableDataOriginChunk;
+
+    private static final long OFFLINE_CACHE_TTL_MS = 30_000L;
+    private static final long NEGATIVE_CACHE_TTL_MS = 60_000L;
+
+    public record OfflineSubLevelLocation(PhysicsPosCore.Vec3d worldPos, ChunkPos holdingChunk) {}
+
+    private record OfflinePoseEntry(
+        SableOfflineStorage.OfflineHeader header,
+        ChunkPos holdingChunk,
+        long cachedAtMs
+    ) {
+        int plotX() {
+            return header.plotX();
+        }
+
+        int plotZ() {
+            return header.plotZ();
+        }
+
+        PhysicsPosCore.Vec3d project(double x, double y, double z) {
+            return header.project(x, y, z);
+        }
+
+        ChunkPos centerChunk() {
+            SableOfflineStorage.ChunkCoords c = header.centerChunk();
+            return new ChunkPos(c.x(), c.z());
+        }
+
+        ChunkPos effectiveHoldingChunk() {
+            return holdingChunk != null ? holdingChunk : centerChunk();
+        }
+    }
+
+    private static final ConcurrentHashMap<String, OfflinePoseEntry> OFFLINE_POSE_CACHE = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<String, Long> NEGATIVE_OFFLINE_CACHE = new ConcurrentHashMap<>();
 
     // Valkyrien Skies 2 handles
     private static MethodHandle vs2IsBlockInShipyard;
@@ -189,8 +245,43 @@ public final class PhysicsModBridge {
                     sableHoldingUpdateChunkStatus = updateStatus;
                     sableHoldingProcessChanges = processChanges;
                 }
+                if (containerClass != null) {
+                    sableContainerGetLogPlotSize = findVirtualExact(lookup, containerClass, "getLogPlotSize", int.class);
+                    sableContainerGetIndex = findVirtualExact(lookup, containerClass, "getIndex", int.class, int.class, int.class);
+                    sableContainerGetOccupancy = findVirtualExact(lookup, containerClass, "getOccupancy", BitSet.class);
+                    Class<?> vec2iClass = findClass("org.joml.Vector2i");
+                    if (vec2iClass != null) {
+                        sableContainerGetOrigin = findVirtualExact(lookup, containerClass, "getOrigin", vec2iClass);
+                        jomlVec2iX = lookup.findGetter(vec2iClass, "x", int.class);
+                        jomlVec2iY = lookup.findGetter(vec2iClass, "y", int.class);
+                    }
+                }
+                Class<?> storageClass = findClass("dev.ryanhcode.sable.sublevel.storage.serialization.SubLevelStorage");
+                if (storageClass != null) {
+                    sableHoldingGetStorage = findVirtualExact(lookup, holdingMapClass, "getStorage", storageClass);
+                    sableStorageGetFolder = findVirtualExact(lookup, storageClass, "getFolder", Path.class);
+                }
+                try {
+                    Field allHoldingField = holdingMapClass.getDeclaredField("allHoldingSubLevels");
+                    allHoldingField.setAccessible(true);
+                    sableHoldingAllSubLevelsField = allHoldingField;
+                } catch (Throwable ignored) {
+                    // Optional RAM-holding-map inspection
+                }
+                Class<?> holdingSubLevelClass = findClass("dev.ryanhcode.sable.sublevel.storage.HoldingSubLevel");
+                Class<?> subLevelDataClass = findClass("dev.ryanhcode.sable.sublevel.storage.serialization.SubLevelData");
+                Class<?> globalPtrClass = findClass("dev.ryanhcode.sable.sublevel.storage.holding.GlobalSavedSubLevelPointer");
+                if (holdingSubLevelClass != null && subLevelDataClass != null) {
+                    sableHoldingSubLevelData = findVirtualExact(lookup, holdingSubLevelClass, "data", subLevelDataClass);
+                    sableDataFullTag = findVirtualExact(lookup, subLevelDataClass, "fullTag", CompoundTag.class);
+                    sableDataOriginChunk = findVirtualExact(lookup, subLevelDataClass, "getOriginLoadedChunk", ChunkPos.class);
+                    if (globalPtrClass != null) {
+                        sableHoldingSubLevelPointer = findVirtualExact(lookup, holdingSubLevelClass, "pointer", globalPtrClass);
+                        sablePointerChunkPos = findVirtualExact(lookup, globalPtrClass, "chunkPos", ChunkPos.class);
+                    }
+                }
             } catch (Throwable ignored) {
-                // Optional Sable server holding-chunk wakeup bridge
+                // Optional Sable server holding-chunk wakeup & offline cold-start bridge
             }
 
             if (sableProjectOutOfSubLevel != null && (sableGetContainingVec3i != null || sableGetContainingPosition != null)) {
@@ -292,6 +383,220 @@ public final class PhysicsModBridge {
             MixinGuard.logOnce("PhysicsModBridge.wakeSableSubLevelAtWorldChunk", t);
             return false;
         }
+    }
+
+    public static void clearOfflineCaches() {
+        OFFLINE_POSE_CACHE.clear();
+        NEGATIVE_OFFLINE_CACHE.clear();
+    }
+
+    public static PhysicsPosCore.Vec3d projectOfflineSableToWorld(Level level, double x, double y, double z) {
+        OfflineSubLevelLocation loc = resolveOfflineSable(level, x, y, z);
+        return loc != null ? loc.worldPos() : null;
+    }
+
+    /**
+     * Cold-start resolver for an unloaded Sable SubLevel whose Waystone has no live projection
+     * and no cached world coordinate yet.
+     *
+     * Resolution order:
+     * 1. O(1) plot-occupancy BitSet check (returns null immediately if SubLevel was destroyed).
+     * 2. Negative-cache check (prevents repeated disk scans for deleted/orphaned plot Waystones).
+     * 3. In-memory {@code SubLevelHoldingChunkMap.allHoldingSubLevels} (recently unloaded SubLevels
+     *    not yet flushed to disk).
+     * 4. Read-only single-pass scan of {@code <sublevels>/*.slvls} (and external {@code *.s/<idx>.slvl})
+     *    indexing every offline SubLevel's saved {@code plot} and {@code pose} NBT without acquiring
+     *    write locks or mutating Sable's storage cache.
+     */
+    public static OfflineSubLevelLocation resolveOfflineSable(Level level, double x, double y, double z) {
+        ensureInitialized();
+        if (!sableLoaded || level == null || level.isClientSide()) {
+            return null;
+        }
+        if (sableServerContainerClass == null || sableGetHoldingChunkMap == null
+            || sableContainerGetLogPlotSize == null || sableContainerGetOrigin == null) {
+            return null;
+        }
+        try {
+            Object container = getSableContainer(level);
+            if (container == null || !sableServerContainerClass.isInstance(container)) {
+                return null;
+            }
+            BlockPos bp = BlockPos.containing(x, y, z);
+            int logPlotSize = (int) sableContainerGetLogPlotSize.invoke(container);
+            Object origin = sableContainerGetOrigin.invoke(container);
+            if (origin == null || jomlVec2iX == null || jomlVec2iY == null) {
+                return null;
+            }
+            int originX = (int) jomlVec2iX.invoke(origin);
+            int originZ = (int) jomlVec2iY.invoke(origin);
+            int localPlotX = ((bp.getX() >> 4) >> logPlotSize) - originX;
+            int localPlotZ = ((bp.getZ() >> 4) >> logPlotSize) - originZ;
+
+            // O(1) destroyed-plot check via Sable's occupancy BitSet
+            if (sableContainerGetIndex != null && sableContainerGetOccupancy != null) {
+                int plotIndex = (int) sableContainerGetIndex.invoke(container, localPlotX, localPlotZ);
+                BitSet occupancy = (BitSet) sableContainerGetOccupancy.invoke(container);
+                if (occupancy != null && (plotIndex < 0 || !occupancy.get(plotIndex))) {
+                    return null;
+                }
+            }
+
+            String dimId = PhysicsPosStorage.dimensionId(level.dimension());
+            String plotKey = dimId + "#" + localPlotX + "," + localPlotZ;
+            long now = System.currentTimeMillis();
+
+            Long negTs = NEGATIVE_OFFLINE_CACHE.get(plotKey);
+            if (negTs != null && (now - negTs) < NEGATIVE_CACHE_TTL_MS) {
+                return null;
+            }
+
+            Object holdingMap = sableGetHoldingChunkMap.invoke(container);
+            if (holdingMap == null) {
+                return null;
+            }
+
+            // Tier 1: In-memory unloaded SubLevels (before saveAll flushes to disk)
+            OfflineSubLevelLocation inMem = findInMemoryHoldingSubLevel(holdingMap, localPlotX, localPlotZ, x, y, z, now);
+            if (inMem != null) {
+                NEGATIVE_OFFLINE_CACHE.remove(plotKey);
+                return inMem;
+            }
+
+            // Tier 2a: Short-lived offline pose cache populated by a recent read-only scan
+            OfflinePoseEntry cached = OFFLINE_POSE_CACHE.get(plotKey);
+            if (cached != null && (now - cached.cachedAtMs()) < OFFLINE_CACHE_TTL_MS) {
+                PhysicsPosCore.Vec3d projected = cached.project(x, y, z);
+                if (projected != null) {
+                    return new OfflineSubLevelLocation(projected, cached.effectiveHoldingChunk());
+                }
+            }
+
+            // Tier 2b: Read-only scan of world/sublevels/*.slvlr + *.slvls
+            if (sableHoldingGetStorage != null && sableStorageGetFolder != null) {
+                Object storage = sableHoldingGetStorage.invoke(holdingMap);
+                Path folder = storage != null ? (Path) sableStorageGetFolder.invoke(storage) : null;
+                if (folder != null && Files.isDirectory(folder)) {
+                    scanSlvlsDirectoryReadOnly(folder, dimId, now);
+                    OfflinePoseEntry scanned = OFFLINE_POSE_CACHE.get(plotKey);
+                    if (scanned != null) {
+                        PhysicsPosCore.Vec3d projected = scanned.project(x, y, z);
+                        if (projected != null) {
+                            NEGATIVE_OFFLINE_CACHE.remove(plotKey);
+                            return new OfflineSubLevelLocation(projected, scanned.effectiveHoldingChunk());
+                        }
+                    }
+                }
+            }
+
+            NEGATIVE_OFFLINE_CACHE.put(plotKey, now);
+            return null;
+        } catch (Throwable t) {
+            MixinGuard.logOnce("PhysicsModBridge.resolveOfflineSable", t);
+            return null;
+        }
+    }
+
+    private static OfflineSubLevelLocation findInMemoryHoldingSubLevel(
+        Object holdingMap,
+        int targetPlotX,
+        int targetPlotZ,
+        double x,
+        double y,
+        double z,
+        long now
+    ) {
+        if (sableHoldingAllSubLevelsField == null || sableHoldingSubLevelData == null || sableDataFullTag == null) {
+            return null;
+        }
+        try {
+            Object mapObj = sableHoldingAllSubLevelsField.get(holdingMap);
+            if (!(mapObj instanceof Map<?, ?> map) || map.isEmpty()) {
+                return null;
+            }
+            for (Object holdingSubLevel : map.values()) {
+                if (holdingSubLevel == null) continue;
+                Object data = sableHoldingSubLevelData.invoke(holdingSubLevel);
+                if (data == null) continue;
+                CompoundTag fullTag = (CompoundTag) sableDataFullTag.invoke(data);
+                OfflinePoseEntry entry = parseOfflinePoseFromTag(fullTag, now);
+                if (entry == null || entry.plotX() != targetPlotX || entry.plotZ() != targetPlotZ) {
+                    continue;
+                }
+                PhysicsPosCore.Vec3d projected = entry.project(x, y, z);
+                if (projected == null) {
+                    continue;
+                }
+                ChunkPos holdingChunk = null;
+                if (sableHoldingSubLevelPointer != null && sablePointerChunkPos != null) {
+                    Object ptr = sableHoldingSubLevelPointer.invoke(holdingSubLevel);
+                    if (ptr != null) {
+                        holdingChunk = (ChunkPos) sablePointerChunkPos.invoke(ptr);
+                    }
+                }
+                if (holdingChunk == null && sableDataOriginChunk != null) {
+                    holdingChunk = (ChunkPos) sableDataOriginChunk.invoke(data);
+                }
+                if (holdingChunk == null) {
+                    holdingChunk = entry.centerChunk();
+                }
+                return new OfflineSubLevelLocation(projected, holdingChunk);
+            }
+        } catch (Throwable ignored) {
+            // Fall through to disk scan
+        }
+        return null;
+    }
+
+    private static void scanSlvlsDirectoryReadOnly(Path folder, String dimId, long now) {
+        List<SableOfflineStorage.ScannedSubLevel> scanned = SableOfflineStorage.scanDirectoryReadOnly(
+            folder,
+            PhysicsPosStorage::readSableRegionPointers,
+            PhysicsPosStorage::readSableOfflineHeader
+        );
+        for (SableOfflineStorage.ScannedSubLevel item : scanned) {
+            SableOfflineStorage.OfflineHeader header = item.header();
+            SableOfflineStorage.ChunkCoords hc = item.holdingChunk();
+            ChunkPos holdingChunk = hc != null ? new ChunkPos(hc.x(), hc.z()) : null;
+            OfflinePoseEntry entry = new OfflinePoseEntry(header, holdingChunk, now);
+            OFFLINE_POSE_CACHE.put(dimId + "#" + entry.plotX() + "," + entry.plotZ(), entry);
+        }
+    }
+
+    private static OfflinePoseEntry parseOfflinePoseFromTag(CompoundTag tag, long now) {
+        if (tag == null) {
+            return null;
+        }
+        CompoundTag plotTag = PhysicsPosStorage.nbtCompound(tag, "plot");
+        CompoundTag poseTag = PhysicsPosStorage.nbtCompound(tag, "pose");
+        if (plotTag == null || poseTag == null) {
+            return null;
+        }
+        Integer plotX = PhysicsPosStorage.nbtInt(plotTag, "plot_x");
+        Integer plotZ = PhysicsPosStorage.nbtInt(plotTag, "plot_z");
+        if (plotX == null || plotZ == null) {
+            return null;
+        }
+        CompoundTag posTag = PhysicsPosStorage.nbtCompound(poseTag, "position");
+        CompoundTag rotTag = PhysicsPosStorage.nbtCompound(poseTag, "rotation_point");
+        CompoundTag oriTag = PhysicsPosStorage.nbtCompound(poseTag, "orientation");
+        if (posTag == null || rotTag == null) {
+            return null;
+        }
+        double posX = PhysicsPosStorage.nbtDouble(posTag, "x", 0.0);
+        double posY = PhysicsPosStorage.nbtDouble(posTag, "y", 0.0);
+        double posZ = PhysicsPosStorage.nbtDouble(posTag, "z", 0.0);
+        double rotX = PhysicsPosStorage.nbtDouble(rotTag, "x", 0.0);
+        double rotY = PhysicsPosStorage.nbtDouble(rotTag, "y", 0.0);
+        double rotZ = PhysicsPosStorage.nbtDouble(rotTag, "z", 0.0);
+        double qx = oriTag != null ? PhysicsPosStorage.nbtDouble(oriTag, "x", 0.0) : 0.0;
+        double qy = oriTag != null ? PhysicsPosStorage.nbtDouble(oriTag, "y", 0.0) : 0.0;
+        double qz = oriTag != null ? PhysicsPosStorage.nbtDouble(oriTag, "z", 0.0) : 0.0;
+        double qw = oriTag != null ? PhysicsPosStorage.nbtDouble(oriTag, "w", 1.0) : 1.0;
+        SableOfflineStorage.OfflineHeader header = new SableOfflineStorage.OfflineHeader(
+            plotX, plotZ, posX, posY, posZ, qx, qy, qz, qw, rotX, rotY, rotZ
+        );
+        return new OfflinePoseEntry(header, null, now);
     }
 
     private static PhysicsPosCore.Vec3d projectSable(Level level, double x, double y, double z) {

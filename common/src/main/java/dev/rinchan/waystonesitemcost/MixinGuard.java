@@ -22,4 +22,8 @@ public final class MixinGuard {
             LOGGER.error("[Waystones Item Cost Extended] Hook '{}' failed; safely falling back to vanilla Waystones behavior.", hookName, error);
         }
     }
+
+    public static Set<String> loggedHooks() {
+        return java.util.Collections.unmodifiableSet(new java.util.LinkedHashSet<>(LOGGED));
+    }
 }

@@ -39,6 +39,38 @@ public final class PhysicsPosCore {
         }
     }
 
+    /**
+     * Pure-Java rigid-body pose transformation matching Sable's {@code Pose3dc.transformPosition}:
+     * {@code world = rotate(q, point - rotationPoint) + position} (unit scale).
+     */
+    public static Vec3d transformPose(
+        Vec3d point,
+        Vec3d position,
+        double qx,
+        double qy,
+        double qz,
+        double qw,
+        Vec3d rotationPoint
+    ) {
+        if (point == null || position == null || rotationPoint == null) {
+            return null;
+        }
+        double vx = point.x() - rotationPoint.x();
+        double vy = point.y() - rotationPoint.y();
+        double vz = point.z() - rotationPoint.z();
+
+        // Standard Hamilton quaternion rotation: v' = v + qw * t + cross(q.xyz, t), where t = 2 * cross(q.xyz, v)
+        double tx = 2.0 * (qy * vz - qz * vy);
+        double ty = 2.0 * (qz * vx - qx * vz);
+        double tz = 2.0 * (qx * vy - qy * vx);
+
+        double rx = vx + qw * tx + (qy * tz - qz * ty);
+        double ry = vy + qw * ty + (qz * tx - qx * tz);
+        double rz = vz + qw * tz + (qx * ty - qy * tx);
+
+        return new Vec3d(position.x() + rx, position.y() + ry, position.z() + rz);
+    }
+
     public interface LiveProjector {
         boolean isInPhysicsSpace(double x, double y, double z);
 

@@ -1,5 +1,8 @@
 package dev.rinchan.waystonesitemcost.physics;
 
+import java.io.DataInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -7,6 +10,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.NbtIo;
 import net.minecraft.nbt.Tag;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
@@ -95,6 +99,58 @@ public final class PhysicsPosStorage extends SavedData implements PhysicsPosCore
         }
         entries.put(waystoneUid, new PhysicsPosCore.CachedWorldPos(dimension, worldPos.x(), worldPos.y(), worldPos.z()));
         setDirty();
+    }
+
+    public void remove(UUID waystoneUid) {
+        if (waystoneUid != null && entries.remove(waystoneUid) != null) {
+            setDirty();
+        }
+    }
+
+    public void clear() {
+        if (!entries.isEmpty()) {
+            entries.clear();
+            setDirty();
+        }
+    }
+
+    public static CompoundTag readNbtStream(InputStream in, boolean gzipCompressed) throws IOException {
+        if (gzipCompressed) {
+            return NbtIo.readCompressed(in);
+        }
+        return NbtIo.read(new DataInputStream(in));
+    }
+
+    public static SableOfflineStorage.OfflineHeader readSableOfflineHeader(InputStream in, boolean gzip) throws IOException {
+        SableHeaderStreamVisitor visitor = new SableHeaderStreamVisitor();
+        if (gzip) {
+            NbtIo.parseCompressed(in, visitor);
+        } else {
+            NbtIo.parse(new DataInputStream(in), visitor);
+        }
+        return visitor.buildHeader();
+    }
+
+    public static int[] readSableRegionPointers(InputStream in, boolean gzip) throws IOException {
+        SableHeaderStreamVisitor.RegionPointersVisitor visitor = new SableHeaderStreamVisitor.RegionPointersVisitor();
+        if (gzip) {
+            NbtIo.parseCompressed(in, visitor);
+        } else {
+            NbtIo.parse(new DataInputStream(in), visitor);
+        }
+        return visitor.pointers();
+    }
+
+    public static CompoundTag nbtCompound(CompoundTag tag, String key) {
+        return tag != null && tag.contains(key, Tag.TAG_COMPOUND) ? tag.getCompound(key) : null;
+    }
+
+    public static Integer nbtInt(CompoundTag tag, String key) {
+        return tag != null && tag.contains(key, Tag.TAG_ANY_NUMERIC) ? tag.getInt(key) : null;
+    }
+
+    public static double nbtDouble(CompoundTag tag, String key, double fallback) {
+        return tag != null && tag.contains(key, Tag.TAG_ANY_NUMERIC) ? tag.getDouble(key) : fallback;
     }
 
     public Map<UUID, PhysicsPosCore.CachedWorldPos> snapshot() {

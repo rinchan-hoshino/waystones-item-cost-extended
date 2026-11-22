@@ -152,6 +152,15 @@ public final class WicePackagedJarGameTests {
         helper.assertTrue(filePath.endsWith(".jar"),
             "E2E must execute against the real packaged .jar, not exploded classes; got: " + filePath);
 
+        try {
+            Class<?> guardClass = Class.forName("dev.rinchan.waystonesitemcost.MixinGuard");
+            Object logged = guardClass.getMethod("loggedHooks").invoke(null);
+            helper.assertTrue(logged instanceof java.util.Set<?> set && set.isEmpty(),
+                "Expected ZERO MixinGuard hook failures during startup/init, but saw: " + logged);
+        } catch (ReflectiveOperationException e) {
+            throw new AssertionError("Failed to inspect MixinGuard.loggedHooks()", e);
+        }
+
         helper.succeed();
     }
 
@@ -527,6 +536,187 @@ public final class WicePackagedJarGameTests {
                 throw ae;
             }
             throw new AssertionError("Real Sable 2.0.6 E2E reflection setup failed", e);
+        }
+    }
+
+    @GameTest(template = TEMPLATE, timeoutTicks = 200)
+    public static void sableColdStartZeroCacheDistanceAndUnloadedWakeup(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        var pair = placeTwoWaystones(helper);
+        var player = createPlayerAtSource(helper, pair, "E2ESableColdStart");
+        BlockPos srcPos = pair.source().getPos();
+        // Park ~2,561 blocks away (far outside loaded GameTest spawn chunks, matching real production airships!)
+        double targetWorldX = srcPos.getX() + 2000.5;
+        double targetWorldY = srcPos.getY() + 0.5;
+        double targetWorldZ = srcPos.getZ() - 1600.5;
+
+        if (!ModList.get().isLoaded("sable")) {
+            // Standard CI run without Sable JAR: still verify zero MixinGuard hook failures.
+            try {
+                Class<?> guardClass = Class.forName("dev.rinchan.waystonesitemcost.MixinGuard");
+                Object logged = guardClass.getMethod("loggedHooks").invoke(null);
+                helper.assertTrue(logged instanceof java.util.Set<?> set && set.isEmpty(),
+                    "Expected ZERO MixinGuard hook failures, got: " + logged);
+            } catch (ReflectiveOperationException e) {
+                throw new AssertionError("Failed to inspect MixinGuard.loggedHooks()", e);
+            }
+            helper.succeed();
+            return;
+        }
+
+        try {
+            Class<?> bridgeClass = Class.forName("dev.rinchan.waystonesitemcost.physics.PhysicsModBridge");
+            Class<?> resolverClass = Class.forName("dev.rinchan.waystonesitemcost.physics.PhysicsPosResolver");
+            MethodHandles.Lookup lookup = MethodHandles.publicLookup();
+            Class<?> containerClass = Class.forName("dev.ryanhcode.sable.api.sublevel.SubLevelContainer");
+            Class<?> serverContainerClass = Class.forName("dev.ryanhcode.sable.api.sublevel.ServerSubLevelContainer");
+            Class<?> holdingMapClass = Class.forName("dev.ryanhcode.sable.sublevel.storage.holding.SubLevelHoldingChunkMap");
+            Class<?> subLevelClass = Class.forName("dev.ryanhcode.sable.sublevel.SubLevel");
+            Class<?> serverSubLevelClass = Class.forName("dev.ryanhcode.sable.sublevel.ServerSubLevel");
+            Class<?> poseClass = Class.forName("dev.ryanhcode.sable.companion.math.Pose3d");
+            Class<?> levelPlotClass = Class.forName("dev.ryanhcode.sable.sublevel.plot.LevelPlot");
+
+            Object container = lookup.findStatic(containerClass, "getContainer", MethodType.methodType(containerClass, Level.class))
+                .invoke(level);
+            Object pose = poseClass.getDeclaredConstructor().newInstance();
+            Object subLevel = lookup.findVirtual(containerClass, "allocateNewSubLevel", MethodType.methodType(subLevelClass, poseClass))
+                .invoke(container, pose);
+            Object plot = subLevel.getClass().getMethod("getPlot").invoke(subLevel);
+            BlockPos plotCenter = (BlockPos) plot.getClass().getMethod("getCenterBlock").invoke(plot);
+            BlockPos plotWaystonePos = new BlockPos(plotCenter.getX(), 70, plotCenter.getZ());
+
+            lookup.findVirtual(levelPlotClass, "newEmptyChunk", MethodType.methodType(void.class, ChunkPos.class))
+                .invoke(plot, new ChunkPos(plotWaystonePos));
+            for (int dx = -1; dx <= 1; dx++) {
+                for (int dz = -1; dz <= 1; dz++) {
+                    level.setBlockAndUpdate(plotWaystonePos.offset(dx, -1, dz), Blocks.STONE.defaultBlockState());
+                }
+            }
+            Waystone shipWaystone = WaystonesAPI.placeWaystone(level, plotWaystonePos, WaystoneStyles.DEFAULT)
+                .orElseThrow(() -> new AssertionError("Failed to place Waystone inside cold-start Sable Plot"));
+
+            // Set real-world parked pose (~216.8 blocks from player)
+            Object logicalPose = subLevel.getClass().getMethod("logicalPose").invoke(subLevel);
+            Vector3d rotPoint = (Vector3d) logicalPose.getClass().getMethod("rotationPoint").invoke(logicalPose);
+            Vector3d worldPosVec = (Vector3d) logicalPose.getClass().getMethod("position").invoke(logicalPose);
+            rotPoint.set(plotWaystonePos.getX() + 0.5, plotWaystonePos.getY() + 0.5, plotWaystonePos.getZ() + 0.5);
+            worldPosVec.set(targetWorldX, targetWorldY, targetWorldZ);
+            subLevel.getClass().getMethod("forceUpdateGlobalBounds").invoke(subLevel);
+
+            // Unload SubLevel into HoldingChunkMap at an OFFSET holdingChunk (-3, -2) chunks away from pose.position
+            // (matching real production r.-1.2.slvlr where pose.position is in (-26, 83) while holdingChunk is in
+            // (-29, 81), outside WAKE_CHUNK_RADIUS=1!), flush to world/sublevels/*.slvlr + *.slvls, and evict RAM
+            // holding maps + this Waystone's PhysicsPosStorage entry to simulate a true server restart!
+            ChunkPos projectedChunk = new ChunkPos(BlockPos.containing(targetWorldX, targetWorldY, targetWorldZ));
+            ChunkPos offsetHoldingChunk = new ChunkPos(projectedChunk.x - 3, projectedChunk.z - 2);
+            Object holdingMap = lookup.findVirtual(serverContainerClass, "getHoldingChunkMap", MethodType.methodType(holdingMapClass))
+                .invoke(container);
+            lookup.findVirtual(holdingMapClass, "moveToUnloaded", MethodType.methodType(void.class, serverSubLevelClass, ChunkPos.class))
+                .invoke(holdingMap, subLevel, offsetHoldingChunk);
+            lookup.findVirtual(holdingMapClass, "updateChunkStatus", MethodType.methodType(void.class, ChunkPos.class, boolean.class))
+                .invoke(holdingMap, offsetHoldingChunk, false);
+            lookup.findVirtual(holdingMapClass, "saveAll", MethodType.methodType(void.class))
+                .invoke(holdingMap);
+            // Evict in-memory holding maps after saveAll() so the SubLevel exists ONLY on disk in *.slvlr/*.slvls,
+            // exercising the exact true server-restart cold-start path (Tier-2 read-only .slvlr + .slvls scan)!
+            var allHoldingField = holdingMapClass.getDeclaredField("allHoldingSubLevels");
+            allHoldingField.setAccessible(true);
+            ((java.util.Map<?, ?>) allHoldingField.get(holdingMap)).clear();
+            var loadedChunksField = holdingMapClass.getDeclaredField("loadedHoldingChunks");
+            loadedChunksField.setAccessible(true);
+            ((java.util.Map<?, ?>) loadedChunksField.get(holdingMap)).clear();
+
+            // Clear ONLY this Waystone's PhysicsPosStorage entry + offline scan cache (do not clobber parallel GameTests!)
+            resolverClass.getMethod("removeServerPosition", MinecraftServer.class, UUID.class)
+                .invoke(null, level.getServer(), shipWaystone.getWaystoneUid());
+            bridgeClass.getMethod("clearOfflineCaches").invoke(null);
+
+            Object afterUnloadProj = bridgeClass.getMethod("projectToWorld", Level.class, double.class, double.class, double.class)
+                .invoke(null, level, plotWaystonePos.getX() + 0.5, plotWaystonePos.getY() + 0.5, plotWaystonePos.getZ() + 0.5);
+            helper.assertTrue(afterUnloadProj == null, "Cold-start SubLevel must be unloaded before distance resolution");
+
+            // 0. Verify .slvlr + streaming .slvls header scan resolves exact offset holdingChunk (-3, -2)
+            Object offlineLoc = bridgeClass.getMethod("resolveOfflineSable", Level.class, double.class, double.class, double.class)
+                .invoke(null, level, plotWaystonePos.getX() + 0.5, plotWaystonePos.getY() + 0.5, plotWaystonePos.getZ() + 0.5);
+            helper.assertTrue(offlineLoc != null, "resolveOfflineSable must resolve unloaded airship from .slvlr + .slvls");
+            ChunkPos resolvedHolding = (ChunkPos) offlineLoc.getClass().getMethod("holdingChunk").invoke(offlineLoc);
+            helper.assertTrue(offsetHoldingChunk.equals(resolvedHolding),
+                "Expected exact .slvlr holdingChunk " + offsetHoldingChunk + " (offset >= 3 chunks from " + projectedChunk
+                    + "), got " + resolvedHolding);
+
+            // Clear caches again before testing resolveDistance cold-start
+            bridgeClass.getMethod("clearOfflineCaches").invoke(null);
+
+            // 1. Cold-start menu/distance query: MUST resolve ~2561m from .slvls (NOT 0m and NOT 28.96M!)
+            double expectedDist = Math.hypot(2000.0, -1600.0);
+            double coldDist = (double) resolverClass.getMethod(
+                "resolveDistance", Entity.class, UUID.class, ResourceKey.class, BlockPos.class
+            ).invoke(null, player, shipWaystone.getWaystoneUid(), shipWaystone.getDimension(), shipWaystone.getPos());
+            helper.assertTrue(Math.abs(coldDist - expectedDist) < 5.0,
+                "Cold-start offline Sable distance must resolve to ~" + expectedDist + "m (not 0m!), got " + coldDist);
+
+            // 2. Destroyed/nonexistent plot coordinate must degrade gracefully to 0m with zero exceptions
+            UUID ghostUid = UUID.randomUUID();
+            double ghostDist = (double) resolverClass.getMethod(
+                "resolveDistance", Entity.class, UUID.class, ResourceKey.class, BlockPos.class
+            ).invoke(null, player, ghostUid, level.dimension(), new BlockPos(20_480_100 + 2048 * 50, 70, 20_480_100 + 2048 * 50));
+            helper.assertTrue(ghostDist == 0.0,
+                "Destroyed/unoccupied Sable plot must degrade cleanly to 0m, got " + ghostDist);
+
+            // 3. Clear cache AGAIN and execute cold-start teleport directly with ZERO cache -> must wake & succeed!
+            resolverClass.getMethod("removeServerPosition", MinecraftServer.class, UUID.class)
+                .invoke(null, level.getServer(), shipWaystone.getWaystoneUid());
+            bridgeClass.getMethod("clearOfflineCaches").invoke(null);
+            player.getInventory().setItem(0, new ItemStack(Items.EMERALD_BLOCK, 5));
+            var teleports = WaystonesConfig.getActive().teleports;
+            boolean prevEnableCosts = teleports.enableCosts;
+            boolean prevEnableCooldowns = teleports.enableCooldowns;
+            List<String> prevRequirements = teleports.warpRequirements;
+            teleports.enableCosts = true;
+            teleports.enableCooldowns = false;
+            teleports.warpRequirements = new ArrayList<>(List.of(
+                "add_item_cost(minecraft:emerald, 1)",
+                "scaled_add_item_cost(distance, minecraft:emerald, 0.01)",
+                "[is_not_within_distance(3000)] add_item_cost(minecraft:emerald, 9999)"
+            ));
+
+            var ctx = WaystonesAPI.createUncheckedDefaultTeleportContext(player, shipWaystone, c -> c.setFromWaystone(pair.source()))
+                .left()
+                .orElseThrow(() -> new AssertionError("Failed to create cold-start teleport context"));
+
+            AtomicReference<Either<List<Entity>, WaystoneTeleportError>> resultRef = new AtomicReference<>();
+            WaystonesAPI.tryTeleportAsync(ctx).thenAccept(resultRef::set);
+
+            helper.succeedWhen(() -> {
+                var res = resultRef.get();
+                helper.assertTrue(res != null, "Waiting for cold-start Sable async teleport completion");
+                try {
+                    helper.assertTrue(res.left().isPresent(),
+                        "Cold-start unloaded Sable airship teleport MUST succeed! Error: " + res.right());
+                    Object afterWakeProj = bridgeClass.getMethod("projectToWorld", Level.class, double.class, double.class, double.class)
+                        .invoke(null, level, plotWaystonePos.getX() + 0.5, plotWaystonePos.getY() + 0.5, plotWaystonePos.getZ() + 0.5);
+                    helper.assertTrue(afterWakeProj != null,
+                        "Cold-start SubLevel must be woken up and projected after teleport");
+                    Class<?> guardClass = Class.forName("dev.rinchan.waystonesitemcost.MixinGuard");
+                    Object logged = guardClass.getMethod("loggedHooks").invoke(null);
+                    helper.assertTrue(logged instanceof java.util.Set<?> set && set.isEmpty(),
+                        "Expected ZERO MixinGuard hook failures after cold-start Sable test, got: " + logged);
+                } catch (Throwable t) {
+                    if (t instanceof AssertionError ae) {
+                        throw ae;
+                    }
+                    throw new AssertionError("Failed to verify cold-start post-wakeup state", t);
+                } finally {
+                    teleports.enableCosts = prevEnableCosts;
+                    teleports.enableCooldowns = prevEnableCooldowns;
+                    teleports.warpRequirements = prevRequirements;
+                }
+            });
+        } catch (Throwable e) {
+            if (e instanceof AssertionError ae) {
+                throw ae;
+            }
+            throw new AssertionError("Cold-start Sable 2.0.6 E2E setup failed", e);
         }
     }
 }

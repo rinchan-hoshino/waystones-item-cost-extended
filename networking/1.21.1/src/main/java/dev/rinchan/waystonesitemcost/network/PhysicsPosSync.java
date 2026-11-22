@@ -12,9 +12,6 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import net.blay09.mods.balm.api.Balm;
 import net.blay09.mods.balm.api.event.PlayerLoginEvent;
-import net.blay09.mods.balm.api.event.ServerTickHandler;
-import net.blay09.mods.balm.api.event.TickPhase;
-import net.blay09.mods.balm.api.event.TickType;
 import net.blay09.mods.balm.api.network.BalmNetworking;
 import net.blay09.mods.waystones.api.Waystone;
 import net.blay09.mods.waystones.api.error.WaystoneTeleportError;
@@ -44,24 +41,43 @@ public record PhysicsPosSync(Map<UUID, PhysicsPosCore.CachedWorldPos> entries) i
     private static final int MAX_WAKE_TICKS = 10;
 
     public static void register(BalmNetworking networking) {
-        networking.registerClientboundPacket(TYPE, PhysicsPosSync.class, PhysicsPosSync::encode, PhysicsPosSync::decode, PhysicsPosSync::handle);
-        Balm.getEvents().onEvent(PlayerLoginEvent.class, event -> syncAllTo(event.getPlayer()));
-        Balm.getEvents().onEvent(BuildWaystoneSelectionMenuEvent.class, event -> {
-            if (!(event.getPlayer() instanceof ServerPlayer serverPlayer)) return;
-            if (!(serverPlayer.level() instanceof ServerLevel serverLevel)) return;
-            MinecraftServer server = serverLevel.getServer();
-            if (PaymentConfig.fixPhysicsShipDistance() && PhysicsModBridge.isAnyPhysicsModLoaded()) {
-                for (var ws : event.getWaystones()) {
-                    PhysicsPosResolver.refreshWaystoneOnServer(server, ws.getWaystoneUid(), ws.getDimension(), ws.getPos());
+        try {
+            networking.registerClientboundPacket(TYPE, PhysicsPosSync.class, PhysicsPosSync::encode, PhysicsPosSync::decode, PhysicsPosSync::handle);
+        } catch (Throwable t) {
+            MixinGuard.logOnce("PhysicsPosSync.registerPacket", t);
+        }
+        try {
+            Balm.getEvents().onEvent(PlayerLoginEvent.class, event -> syncAllTo(event.getPlayer()));
+        } catch (Throwable t) {
+            MixinGuard.logOnce("PhysicsPosSync.registerPlayerLogin", t);
+        }
+        try {
+            Balm.getEvents().onEvent(BuildWaystoneSelectionMenuEvent.class, event -> {
+                if (!(event.getPlayer() instanceof ServerPlayer serverPlayer)) return;
+                if (!(serverPlayer.level() instanceof ServerLevel serverLevel)) return;
+                MinecraftServer server = serverLevel.getServer();
+                if (PaymentConfig.fixPhysicsShipDistance() && PhysicsModBridge.isAnyPhysicsModLoaded()) {
+                    for (var ws : event.getWaystones()) {
+                        PhysicsPosResolver.refreshWaystoneOnServer(server, ws.getWaystoneUid(), ws.getDimension(), ws.getPos());
+                    }
                 }
-            }
-            sendSnapshot(serverPlayer, server);
-        });
-        Balm.getEvents().onEvent(WaystoneTeleportEvent.Prepare.class, PhysicsPosSync::onPrepareTeleport);
-        Balm.getEvents().onTickEvent(TickType.Server, TickPhase.End, (ServerTickHandler) PhysicsPosSync::onServerTick);
+                sendSnapshot(serverPlayer, server);
+            });
+        } catch (Throwable t) {
+            MixinGuard.logOnce("PhysicsPosSync.registerMenuSync", t);
+        }
+        try {
+            Balm.getEvents().onEvent(WaystoneTeleportEvent.Prepare.class, PhysicsPosSync::onPrepareTeleport);
+        } catch (Throwable t) {
+            MixinGuard.logOnce("PhysicsPosSync.registerPrepareTeleport", t);
+        }
+        // NOTE: Do NOT use Balm.getEvents().onTickEvent(TickType.Server, ...): Balm 21.0.67 on NeoForge 1.21.1
+        // registers the abstract ServerTickEvent class instead of ServerTickEvent.Post and crashes EventBus.
+        // Periodic server tick is registered directly via loader-native hooks (NeoForge ServerTickEvent.Post /
+        // Fabric ServerTickEvents.END_SERVER_TICK).
     }
 
-    private static void onServerTick(MinecraftServer server) {
+    public static void onServerTick(MinecraftServer server) {
         if (server == null || server.getTickCount() % PERIODIC_REFRESH_TICKS != 0) {
             return;
         }
@@ -108,28 +124,39 @@ public record PhysicsPosSync(Map<UUID, PhysicsPosCore.CachedWorldPos> entries) i
             }
 
             // Target Waystone is inside an unloaded physics sub-level (e.g. Sable airship parked in an unloaded chunk).
-            // Load its cached world-space chunks with a block-ticking ticket so Sable's SubLevelHoldingChunkMap
-            // deserializes the SubLevel before Waystones runs isValidInLevel() and resolveDestination().
-            PhysicsPosCore.Vec3d cachedWorld = PhysicsPosResolver.getCachedWorldPos(server, target.getWaystoneUid(), target.getDimension());
-            if (cachedWorld == null) {
+            // Always resolve exact holdingChunk from Sable's offline storage / .slvlr (hits 30s RAM cache in O(1)
+            // when already scanned) in addition to projectedWorldChunk, because large airships frequently have a
+            // holdingChunk offset >= 3 chunks from pose.position!
+            PhysicsModBridge.OfflineSubLevelLocation offline = PhysicsPosResolver.resolveOfflineLocationOnServer(
+                server, target.getWaystoneUid(), target.getDimension(), target.getPos());
+            PhysicsPosCore.Vec3d cachedWorld = offline != null && offline.worldPos() != null
+                ? offline.worldPos()
+                : PhysicsPosResolver.getCachedWorldPos(server, target.getWaystoneUid(), target.getDimension());
+            ChunkPos holdingChunk = offline != null ? offline.holdingChunk() : null;
+            if (cachedWorld == null && holdingChunk == null) {
                 return;
             }
-            ChunkPos centerChunk = new ChunkPos(BlockPos.containing(cachedWorld.x(), cachedWorld.y(), cachedWorld.z()));
-            int centerX = centerChunk.getMinBlockX() >> 4;
-            int centerZ = centerChunk.getMinBlockZ() >> 4;
+            ChunkPos projectedWorldChunk = cachedWorld != null
+                ? new ChunkPos(BlockPos.containing(cachedWorld.x(), cachedWorld.y(), cachedWorld.z()))
+                : null;
+            ChunkPos primaryChunk = holdingChunk != null ? holdingChunk : projectedWorldChunk;
+            ChunkPos secondaryChunk = (projectedWorldChunk != null && !projectedWorldChunk.equals(primaryChunk))
+                ? projectedWorldChunk
+                : null;
+
             int entityId = entity.getId();
-            targetLevel.getChunkSource().addRegionTicket(TicketType.POST_TELEPORT, centerChunk, WAKE_TICKET_RADIUS, entityId);
-            for (int dx = -WAKE_CHUNK_RADIUS; dx <= WAKE_CHUNK_RADIUS; dx++) {
-                for (int dz = -WAKE_CHUNK_RADIUS; dz <= WAKE_CHUNK_RADIUS; dz++) {
-                    event.addChunkPosition(new ChunkPos(centerX + dx, centerZ + dz));
-                }
+            addWakeTickets(event, targetLevel, primaryChunk, entityId);
+            if (secondaryChunk != null) {
+                addWakeTickets(event, targetLevel, secondaryChunk, entityId);
             }
+            final ChunkPos finalPrimary = primaryChunk;
+            final ChunkPos finalSecondary = secondaryChunk;
             event.addPreparationTask(prevResult -> {
                 if (prevResult.right().isPresent()) {
                     return CompletableFuture.completedFuture(prevResult);
                 }
                 CompletableFuture<Either<Void, WaystoneTeleportError>> future = new CompletableFuture<>();
-                pollWakeSubLevel(server, targetLevel, target, centerChunk, entityId, prevResult, future, 0);
+                pollWakeSubLevel(server, targetLevel, target, finalPrimary, finalSecondary, entityId, prevResult, future, 0);
                 return future;
             });
         } catch (Throwable t) {
@@ -137,11 +164,23 @@ public record PhysicsPosSync(Map<UUID, PhysicsPosCore.CachedWorldPos> entries) i
         }
     }
 
+    private static void addWakeTickets(WaystoneTeleportEvent.Prepare event, ServerLevel level, ChunkPos centerChunk, int entityId) {
+        int centerX = centerChunk.getMinBlockX() >> 4;
+        int centerZ = centerChunk.getMinBlockZ() >> 4;
+        level.getChunkSource().addRegionTicket(TicketType.POST_TELEPORT, centerChunk, WAKE_TICKET_RADIUS, entityId);
+        for (int dx = -WAKE_CHUNK_RADIUS; dx <= WAKE_CHUNK_RADIUS; dx++) {
+            for (int dz = -WAKE_CHUNK_RADIUS; dz <= WAKE_CHUNK_RADIUS; dz++) {
+                event.addChunkPosition(new ChunkPos(centerX + dx, centerZ + dz));
+            }
+        }
+    }
+
     private static void pollWakeSubLevel(
         MinecraftServer server,
         ServerLevel targetLevel,
         Waystone target,
-        ChunkPos centerChunk,
+        ChunkPos primaryChunk,
+        ChunkPos secondaryChunk,
         int entityId,
         Either<Void, WaystoneTeleportError> prevResult,
         CompletableFuture<Either<Void, WaystoneTeleportError>> future,
@@ -149,10 +188,23 @@ public record PhysicsPosSync(Map<UUID, PhysicsPosCore.CachedWorldPos> entries) i
     ) {
         Runnable step = () -> {
             try {
+                ChunkPos activePrimary = primaryChunk;
                 if (attempt == 4) {
-                    targetLevel.getChunkSource().addRegionTicket(TicketType.POST_TELEPORT, centerChunk, WAKE_TICKET_RADIUS, entityId);
+                    // Fallback: if cached chunk did not wake the SubLevel, re-resolve exact holding chunk from offline storage
+                    PhysicsModBridge.OfflineSubLevelLocation offline = PhysicsPosResolver.resolveOfflineLocationOnServer(
+                        server, target.getWaystoneUid(), target.getDimension(), target.getPos());
+                    if (offline != null && offline.holdingChunk() != null && !offline.holdingChunk().equals(activePrimary)) {
+                        activePrimary = offline.holdingChunk();
+                    }
+                    targetLevel.getChunkSource().addRegionTicket(TicketType.POST_TELEPORT, activePrimary, WAKE_TICKET_RADIUS, entityId);
+                    if (secondaryChunk != null) {
+                        targetLevel.getChunkSource().addRegionTicket(TicketType.POST_TELEPORT, secondaryChunk, WAKE_TICKET_RADIUS, entityId);
+                    }
                 }
-                PhysicsModBridge.wakeSableSubLevelAtWorldChunk(targetLevel, centerChunk, WAKE_CHUNK_RADIUS);
+                PhysicsModBridge.wakeSableSubLevelAtWorldChunk(targetLevel, activePrimary, WAKE_CHUNK_RADIUS);
+                if (secondaryChunk != null) {
+                    PhysicsModBridge.wakeSableSubLevelAtWorldChunk(targetLevel, secondaryChunk, WAKE_CHUNK_RADIUS);
+                }
                 Vec3 center = Vec3.atCenterOf(target.getPos());
                 if (PhysicsModBridge.projectToWorld(targetLevel, center.x, center.y, center.z) != null) {
                     PhysicsPosResolver.refreshWaystoneOnServer(server, target.getWaystoneUid(), target.getDimension(), target.getPos());
@@ -160,8 +212,9 @@ public record PhysicsPosSync(Map<UUID, PhysicsPosCore.CachedWorldPos> entries) i
                     return;
                 }
                 if (attempt < MAX_WAKE_TICKS) {
+                    final ChunkPos nextPrimary = activePrimary;
                     server.tell(new TickTask(server.getTickCount() + 1, () ->
-                        pollWakeSubLevel(server, targetLevel, target, centerChunk, entityId, prevResult, future, attempt + 1)));
+                        pollWakeSubLevel(server, targetLevel, target, nextPrimary, secondaryChunk, entityId, prevResult, future, attempt + 1)));
                     return;
                 }
             } catch (Throwable t) {

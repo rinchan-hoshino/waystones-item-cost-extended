@@ -17,10 +17,18 @@ public abstract class NetworkingMixin {
     private static void itemCostExtended$registerPackets(BalmNetworking networking, CallbackInfo callback) {
         try {
             RecipeSync.register(networking);
+        } catch (Throwable t) {
+            MixinGuard.logOnce("ModNetworking.initialize.RecipeSync", t);
+        }
+        try {
             PhysicsPosSync.register(networking);
+        } catch (Throwable t) {
+            MixinGuard.logOnce("ModNetworking.initialize.PhysicsPosSync", t);
+        }
+        try {
             LegacyTeleportHandler.register();
         } catch (Throwable t) {
-            MixinGuard.logOnce("ModNetworking.initialize", t);
+            MixinGuard.logOnce("ModNetworking.initialize.LegacyTeleportHandler", t);
         }
     }
 }

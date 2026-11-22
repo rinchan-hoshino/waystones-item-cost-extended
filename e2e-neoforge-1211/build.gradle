@@ -44,9 +44,15 @@ neoForge {
 }
 
 dependencies {
-    // Real upstream Waystones + Balm JARs
-    implementation files(new File(profileDependenciesDir, "balm-${p.id}.jar"))
-    implementation files(new File(profileDependenciesDir, "waystones-${p.id}.jar"))
+    // Real upstream Waystones + Balm JARs (optionally overridable via -PbalmJar=... / -PwaystonesJar=...)
+    def balmJarOverride = providers.gradleProperty('balmJar').orNull
+    def waystonesJarOverride = providers.gradleProperty('waystonesJar').orNull
+    implementation files(balmJarOverride != null && !balmJarOverride.trim().isEmpty()
+        ? file(balmJarOverride)
+        : new File(profileDependenciesDir, "balm-${p.id}.jar"))
+    implementation files(waystonesJarOverride != null && !waystonesJarOverride.trim().isEmpty()
+        ? file(waystonesJarOverride)
+        : new File(profileDependenciesDir, "waystones-${p.id}.jar"))
 
     // Real final packaged release JAR (runtimeOnly -> ZERO compile access to mod internals!)
     runtimeOnly files(packagedModJar)

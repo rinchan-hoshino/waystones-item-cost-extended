@@ -71,8 +71,30 @@ def main() -> int:
         "--rerun-tasks",
     ]
     print(f"  [cmd] {' '.join(cmd)}")
-    subprocess.run(cmd, cwd=ROOT, env=env, check=True)
-    print("\nPackaged-JAR E2E verification PASSED.")
+    proc = subprocess.Popen(
+        cmd,
+        cwd=ROOT,
+        env=env,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+        bufsize=1,
+    )
+    hook_errors: list[str] = []
+    assert proc.stdout is not None
+    for line in proc.stdout:
+        sys.stdout.write(line)
+        if "[Waystones Item Cost Extended] Hook" in line and "failed" in line:
+            hook_errors.append(line.strip())
+    rc = proc.wait()
+    if rc != 0:
+        raise subprocess.CalledProcessError(rc, cmd)
+    if hook_errors:
+        raise RuntimeError(
+            "Detected unexpected MixinGuard hook failure(s) in E2E log:\n  "
+            + "\n  ".join(hook_errors)
+        )
+    print("\nPackaged-JAR E2E verification PASSED (zero Hook failures).")
     return 0
 
 

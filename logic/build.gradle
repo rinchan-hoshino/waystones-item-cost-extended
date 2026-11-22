@@ -22,6 +22,7 @@ sourceSets.main.java {
     include 'dev/rinchan/waystonesitemcost/config/PaymentConfig.java'
     include 'dev/rinchan/waystonesitemcost/config/WaystonesRuleDetector.java'
     include 'dev/rinchan/waystonesitemcost/physics/PhysicsPosCore.java'
+    include 'dev/rinchan/waystonesitemcost/physics/SableOfflineStorage.java'
 }
 
 dependencies {

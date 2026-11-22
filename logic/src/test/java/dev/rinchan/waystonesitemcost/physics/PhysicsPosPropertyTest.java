@@ -222,4 +222,44 @@ final class PhysicsPosPropertyTest {
             assertNull(wrongDim, "Cached Overworld position must not leak into Nether lookup");
         }
     }
+
+    @Test
+    void transformPoseMatchesRigidBodyQuaternionRotationAndTranslation() {
+        // 1. Identity quaternion: world = (point - rotationPoint) + position
+        Vec3d rotPoint = new Vec3d(20_481_033.5, 127.5, 20_485_127.5);
+        Vec3d pos = new Vec3d(-456.25, 120.0, 1304.75);
+        Vec3d atCenter = PhysicsPosCore.transformPose(rotPoint, pos, 0.0, 0.0, 0.0, 1.0, rotPoint);
+        assertEquals(pos.x(), atCenter.x(), EPS);
+        assertEquals(pos.y(), atCenter.y(), EPS);
+        assertEquals(pos.z(), atCenter.z(), EPS);
+
+        // 2. +90 deg rotation around Y axis: (1, 0, 0) -> (0, 0, -1)
+        double half = Math.PI / 4.0;
+        double qy = Math.sin(half);
+        double qw = Math.cos(half);
+        Vec3d offsetPoint = new Vec3d(rotPoint.x() + 10.0, rotPoint.y() + 3.0, rotPoint.z());
+        Vec3d rotated = PhysicsPosCore.transformPose(offsetPoint, pos, 0.0, qy, 0.0, qw, rotPoint);
+        assertEquals(pos.x(), rotated.x(), EPS);
+        assertEquals(pos.y() + 3.0, rotated.y(), EPS);
+        assertEquals(pos.z() - 10.0, rotated.z(), EPS);
+
+        // 3. Random unit quaternions preserve Euclidean distance from rotationPoint
+        Random rng = new Random(0x213_5AB1EL);
+        for (int i = 0; i < 500; i++) {
+            double ax = rng.nextDouble() * 2.0 - 1.0;
+            double ay = rng.nextDouble() * 2.0 - 1.0;
+            double az = rng.nextDouble() * 2.0 - 1.0;
+            double aw = rng.nextDouble() * 2.0 - 1.0;
+            double norm = Math.sqrt(ax * ax + ay * ay + az * az + aw * aw);
+            if (norm < 1e-6) continue;
+            Vec3d p = new Vec3d(
+                rotPoint.x() + (rng.nextDouble() * 40.0 - 20.0),
+                rotPoint.y() + (rng.nextDouble() * 40.0 - 20.0),
+                rotPoint.z() + (rng.nextDouble() * 40.0 - 20.0)
+            );
+            Vec3d out = PhysicsPosCore.transformPose(p, pos, ax / norm, ay / norm, az / norm, aw / norm, rotPoint);
+            assertEquals(p.distanceTo(rotPoint), out.distanceTo(pos), 1e-5,
+                "Rigid-body quaternion rotation must preserve distance from rotationPoint");
+        }
+    }
 }
