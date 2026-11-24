@@ -1,37 +1,59 @@
 # Waystones Item Cost Extended
 
-<p align="center"><img src="common/src/main/resources/icon.png" alt="Waystones Item Cost Extended badge icon" width="224" /></p>
+<p align="center"><img src="common/src/main/resources/icon.png" alt="Waystones Item Cost Extended" width="192" /></p>
 
 <!-- PROJECT_PAGE_START -->
 
-**Waystones Item Cost Extended** upgrades [Waystones](https://modrinth.com/mod/waystones) teleport item costs with reversible multi-denomination payments & change, Bundle/Shulker Box deductions, combined multi-item costs, real-time cost breakdown tooltips, an in-game configuration screen, and optional [Lightman's Currency](https://modrinth.com/mod/lightmans-currency) wallet integration.
+**Waystones Item Cost Extended** makes item-based [Waystones](https://modrinth.com/mod/waystones) fees practical for survival servers and modpacks: pay with blocks or nuggets and get exact change back, pull payment items straight out of Bundles and Shulker Boxes, pay with [Lightman's Currency](https://modrinth.com/mod/lightmans-currency) wallets, and teleport cleanly to Waystones mounted on **Sable** or **Valkyrien Skies 2** airships and ships — even when parked in unloaded chunks.
 
-Zero external library dependencies — just install Waystones (and Balm).
+![Waystone Payment & Change Breakdown](docs/screenshots/01-waystone-payment-tooltip.png)
 
 ---
 
-## 30-Second Quick Start (Emerald & Combined Costs)
+## Key Features
 
-Waystones itself ships with XP costs by default. To charge emeralds (or multiple items at once), add `warpRequirements` to `config/waystones-common.toml` — or open this mod's in-game **Config Screen** (Mod Menu / Forge / NeoForge) and click **"Copy Emerald Cost Config Example"**:
+- **Automatic Change & Multi-Denomination Payments** (`recipePayments = true`):
+  - Recognizes reversible storage-block and nugget recipes automatically (`Iron Nugget ↔ Iron Ingot ↔ Iron Block`, `Emerald ↔ Emerald Block`, modded metals/gems).
+  - Spends smaller denominations first to avoid unnecessary change, breaks larger blocks when needed, and returns exact change into your inventory. One-way recipes (like logs → planks) are never used.
+- **Pay from Bundles & Shulker Boxes** (`searchNestedContainers = true`):
+  - Deducts payment items directly from **Bundles** and **Shulker Boxes** carried in your inventory.
+  - Change is always placed safely into your main inventory/hotbar slots (`0..35`) — never into armor/offhand slots and never dropped on the ground.
+- **Clear Cost Breakdown & Full-Inventory Protection** (`showPaymentPreviewTooltip = true`):
+  - Hovering over a Waystone's cost shows which items, containers, or wallet coins will be spent and what change you will get back.
+  - If you can afford the trip but have no free inventory slot to hold the change, the teleport is blocked with a clear red notice telling you how many slots to free — your items are never swallowed.
+- **Airships, Trains & Ships: Real Distance + Unloaded Teleport** (`fixPhysicsShipDistance = true`):
+  - Waystones placed on **Sable** (*Create: Aeronautics*, *Simurail*) or **Valkyrien Skies 2** ships normally store remote shipyard coordinates millions of blocks away, causing absurd `28,960 km` warp fees and failed teleports whenever the ship's chunk unloads.
+  - Resolves each ship's real-world position for distance fees, list sorting, and distance labels — **even right after a cold server restart before anyone visits the ship** — and **automatically loads and wakes unloaded multi-chunk airships/ships** when you teleport to them.
+- **Combined Multi-Item Fees**:
+  - Charge multiple different items for a single warp; every cost is checked and deducted together.
+- **Optional Lightman's Currency Support**:
+  - Automatically supports coin chains and equipped wallets on **1.20.1 (Forge)**, **1.21.1 (NeoForge)**, and **26.1.2 (NeoForge)** when Lightman's Currency is installed.
+
+![Full-Inventory Change Protection](docs/screenshots/02-full-inventory-guard.png)
+
+---
+
+## Quick Setup (Charging Emeralds Instead of XP)
+
+Waystones charges XP by default. To switch to item costs, paste one of the snippets below into `config/waystones-common.toml` — or open this mod's in-game **Config Screen** and click **"Copy Emerald Cost Config Example"**:
 
 ### Minecraft 1.21.1 (Fabric & NeoForge)
 ```toml
 warpRequirements = [
     "add_item_cost(minecraft:emerald, 3)",
-    "add_item_cost(minecraft:oak_log, 2)"
+    "scaled_add_item_cost(distance, minecraft:emerald, 0.002)"
 ]
 ```
 
-### Minecraft 26.1.2, 26.2 & 26.3 (Fabric & NeoForge — Shogi syntax)
+### Minecraft 26.1.2, 26.2 & 26.3 (Fabric & NeoForge)
 ```toml
 warpRequirements = [
-    "item_cost('minecraft:emerald', 3)",
-    "item_cost('minecraft:oak_log', 2)"
+    "item_cost('minecraft:emerald', 3)"
 ]
 ```
 
 ### Minecraft 1.20.1 (Fabric & Forge — Waystones 14.1.x)
-Because Waystones `14.1.21` does not have `warpRequirements`, enable the built-in `[legacy_1_20_1]` section in `config/waystones-item-cost-extended.toml` (or toggle it in the Config Screen):
+Waystones `14.1.x` predates `warpRequirements`, so `1.20.1` includes a built-in `[legacy_1_20_1]` rule section in `config/waystones-item-cost-extended.toml`:
 ```toml
 [legacy_1_20_1]
 enableCustomItemCosts = true
@@ -40,76 +62,47 @@ itemCosts = [
     "minecraft:emerald,1,0,0"
 ]
 ```
-Format: `"item_id,base_count,per_km_extra,cross_dim_extra"`. Uses the exact same multi-denomination, nested container, and Lightman wallet payment engine.
+Format: `"item_id,base_count,per_km_extra,cross_dim_extra"`.
 
----
-
-## Core Features
-
-- **Reversible Multi-Denomination Payments & Change** (`recipePayments = true` by default):
-  - Automatically discovers lossless, bidirectional single-ingredient crafting chains (e.g., Iron Nugget ↔ Iron Ingot ↔ Iron Block, Emerald ↔ Emerald Block, modded storage blocks).
-  - Prefers smaller denominations first to minimize change, then returns exact change greedily from largest to smallest denomination.
-  - One-way or lossy recipes (such as logs → planks) are safely ignored. Server recipes are synced to clients across all versions (including Minecraft 26.x) so previews always match server datapacks.
-- **Nested Container Deductions** (`searchNestedContainers = true` by default):
-  - Automatically pays from **Bundles** and **Shulker Boxes** carried in your inventory.
-  - Returned change is **always** placed safely into ordinary inventory/hotbar slots (`0..35`) — never into armor/offhand slots, never into containers, and never dropped on the ground.
-- **Combined Item Costs**:
-  - Combine multiple distinct item costs in a single teleport transaction; all costs are validated and committed atomically with rollback support.
-- **Real-Time Payment Preview & Full-Inventory Diagnostics** (`showPaymentPreviewTooltip = true` by default):
-  - Hovering over a Waystone cost displays the actual multi-denomination payment, change returned, wallet usage, and nested container usage.
-  - Clearly distinguishes **insufficient funds** from **inventory full for change**: when you have enough value but lack space in slots `0..35` to receive change, the tooltip and rejection notice display in red how many exact slots must be freed.
-- **Native In-Game Config Screen**:
-  - Accessible via Mod Menu (Fabric) and the native Mods config button (Forge / NeoForge).
-  - Hot-saves `config/waystones-item-cost-extended.toml` immediately, shows a live Waystones item cost detection status bar, and includes a one-click **"Copy Emerald Cost Config Example"** button.
-- **Optional Lightman's Currency Integration**:
-  - Supported on **1.20.1 (Forge)**, **1.21.1 (NeoForge)**, and **26.1.2 (NeoForge)** (soft-skipped on Fabric where Lightman's API differs).
-  - Automatically activates when Lightman's Currency is installed. Supports all registered coin chains and equipped wallets alongside hotbar/main/offhand coins; bank accounts and loose inventory wallets are never touched.
-- **Physics Airship / Train / Ship Real-World Distance Support** (`fixPhysicsShipDistance = true` by default):
-  - Automatically resolves real-world coordinates for Waystones placed on **Sable** (`Create: Aeronautics` / `Simurail`) and **Valkyrien Skies 2** sub-worlds via zero-dependency soft reflection.
-  - Persists last-known real-world coordinates in server `SavedData` (surviving unloaded ships) and syncs them to clients on login & menu open so out-of-view ships never show astronomical `28960km` costs or locked buttons.
-- **4 Languages Included**: English (`en_us`), Simplified Chinese (`zh_cn`), Traditional Chinese (`zh_tw`), and Japanese (`ja_jp`).
-
----
-
-## Supported Matrix (2.1.3)
-
-| Minecraft | Loaders | Waystones Generation | Lightman's Currency |
-|---|---|---|---|
-| `1.20.1` | Fabric, Forge | Waystones 14.1.x (`14.1.21` + `[legacy_1_20_1]`) | Forge |
-| `1.21.1` | Fabric, NeoForge | Requirement (`21.1.x`) | NeoForge |
-| `26.1.2` | Fabric, NeoForge | Shogi (`26.1.2.x`) | NeoForge |
-| `26.2` | Fabric, NeoForge | Shogi (`26.2.x`) | — |
-| `26.3` | Fabric, NeoForge | Shogi (`26.3.x`) | — |
+![In-Game Config Screen](docs/screenshots/03-config-screen.png)
 
 ---
 
 ## Configuration (`config/waystones-item-cost-extended.toml`)
 
+Editable in-game via **Mod Menu** (Fabric) or **Mods → Config** (Forge / NeoForge), or directly in TOML:
+
 | Key | Default | Description |
 |---|---|---|
-| `recipePayments` | `true` | Allow reversible crafting denominations and greedy change. |
-| `searchNestedContainers` | `true` | Deduct payment items from Bundles and Shulker Boxes in inventory. |
-| `showPaymentPreviewTooltip` | `true` | Show payment/change/wallet breakdown and full-inventory warnings on Waystones tooltips. |
-| `fixPhysicsShipDistance` | `true` | Resolve real-world coordinates for Waystones on Sable (Create: Aeronautics / Simurail) & Valkyrien Skies 2 ships, including unloaded and out-of-view ships. |
-| `[legacy_1_20_1].enableCustomItemCosts` | `false` | *(1.20.1 only)* Enable custom item costs via Waystones teleport events. |
-| `[legacy_1_20_1].waiveVanillaXpCost` | `false` | *(1.20.1 only)* Waive Waystones' vanilla XP cost when custom item costs are enabled. |
+| `recipePayments` | `true` | Pay across reversible nugget/ingot/block crafting tiers and return exact change. |
+| `searchNestedContainers` | `true` | Allow paying with items stored inside carried Bundles and Shulker Boxes. |
+| `showPaymentPreviewTooltip` | `true` | Show payment/change breakdown and full-inventory warnings on Waystone tooltips. |
+| `fixPhysicsShipDistance` | `true` | Use real-world coordinates and wake unloaded ships for Waystones on Sable & Valkyrien Skies 2 vehicles. |
+| `[legacy_1_20_1].enableCustomItemCosts` | `false` | *(1.20.1 only)* Enable custom item fees on Waystones 14.1.x. |
+| `[legacy_1_20_1].waiveVanillaXpCost` | `false` | *(1.20.1 only)* Waive vanilla XP costs when custom item fees are enabled. |
 | `[legacy_1_20_1].itemCosts` | `["minecraft:emerald,1,0,0"]` | *(1.20.1 only)* List of `"item_id,base,per_km,cross_dim"` cost rules. |
+
+---
+
+## Supported Versions (2.1.4)
+
+Requires **[Waystones](https://modrinth.com/mod/waystones)** and **[Balm](https://modrinth.com/mod/balm)**. No other libraries needed.
+
+| Minecraft | Loaders | Optional Lightman's Currency |
+|---|---|---|
+| `1.20.1` | Fabric, Forge | Forge |
+| `1.21.1` | Fabric, NeoForge | NeoForge |
+| `26.1.2` | Fabric, NeoForge | NeoForge |
+| `26.2` | Fabric, NeoForge | — |
+| `26.3` | Fabric, NeoForge | — |
 
 <!-- PROJECT_PAGE_END -->
 
 ---
 
-## Building & Verification
-
-Enable the local `pre-push` verification gate once after cloning:
+## Building
 
 ```bash
 ./scripts/setup-hooks.sh
-```
-
-Run the full 3-gate verification suite (all JUnit unit + property tests, 8-target build matrix + `ArchitectureContractTest`, and packaged-JAR Minecraft `1.21.1` NeoForge black-box E2E):
-
-```bash
 ./scripts/verify.sh [--container]
 ```
-
