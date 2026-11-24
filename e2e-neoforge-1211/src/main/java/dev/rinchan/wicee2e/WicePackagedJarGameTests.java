@@ -719,4 +719,165 @@ public final class WicePackagedJarGameTests {
             throw new AssertionError("Cold-start Sable 2.0.6 E2E setup failed", e);
         }
     }
+
+    @GameTest(template = TEMPLATE, timeoutTicks = 240)
+    public static void sableLargeMultiChunkAirshipColdStartUnloadedTeleport(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        var pair = placeTwoWaystones(helper);
+        var player = createPlayerAtSource(helper, pair, "E2ESableLargeAirship");
+        BlockPos srcPos = pair.source().getPos();
+        // Park > 3000 blocks away (~3,124.1m) in completely unloaded world chunks
+        double targetWorldX = srcPos.getX() + 2400.5;
+        double targetWorldY = srcPos.getY() + 0.5;
+        double targetWorldZ = srcPos.getZ() - 2000.5;
+
+        if (!ModList.get().isLoaded("sable")) {
+            try {
+                Class<?> guardClass = Class.forName("dev.rinchan.waystonesitemcost.MixinGuard");
+                Object logged = guardClass.getMethod("loggedHooks").invoke(null);
+                helper.assertTrue(logged instanceof java.util.Set<?> set && set.isEmpty(),
+                    "Expected ZERO MixinGuard hook failures, got: " + logged);
+            } catch (ReflectiveOperationException e) {
+                throw new AssertionError("Failed to inspect MixinGuard.loggedHooks()", e);
+            }
+            helper.succeed();
+            return;
+        }
+
+        try {
+            Class<?> bridgeClass = Class.forName("dev.rinchan.waystonesitemcost.physics.PhysicsModBridge");
+            Class<?> resolverClass = Class.forName("dev.rinchan.waystonesitemcost.physics.PhysicsPosResolver");
+            MethodHandles.Lookup lookup = MethodHandles.publicLookup();
+            Class<?> containerClass = Class.forName("dev.ryanhcode.sable.api.sublevel.SubLevelContainer");
+            Class<?> serverContainerClass = Class.forName("dev.ryanhcode.sable.api.sublevel.ServerSubLevelContainer");
+            Class<?> holdingMapClass = Class.forName("dev.ryanhcode.sable.sublevel.storage.holding.SubLevelHoldingChunkMap");
+            Class<?> subLevelClass = Class.forName("dev.ryanhcode.sable.sublevel.SubLevel");
+            Class<?> serverSubLevelClass = Class.forName("dev.ryanhcode.sable.sublevel.ServerSubLevel");
+            Class<?> poseClass = Class.forName("dev.ryanhcode.sable.companion.math.Pose3d");
+            Class<?> levelPlotClass = Class.forName("dev.ryanhcode.sable.sublevel.plot.LevelPlot");
+
+            Object container = lookup.findStatic(containerClass, "getContainer", MethodType.methodType(containerClass, Level.class))
+                .invoke(level);
+            Object pose = poseClass.getDeclaredConstructor().newInstance();
+            Object subLevel = lookup.findVirtual(containerClass, "allocateNewSubLevel", MethodType.methodType(subLevelClass, poseClass))
+                .invoke(container, pose);
+            Object plot = subLevel.getClass().getMethod("getPlot").invoke(subLevel);
+            BlockPos plotCenter = (BlockPos) plot.getClass().getMethod("getCenterBlock").invoke(plot);
+            BlockPos plotWaystonePos = new BlockPos(plotCenter.getX(), 70, plotCenter.getZ());
+
+            // Allocate all Plot chunks for an 84x68 stone deck (spanning 6x5 chunks)
+            int minPlotCx = (plotWaystonePos.getX() - 41) >> 4;
+            int maxPlotCx = (plotWaystonePos.getX() + 42) >> 4;
+            int minPlotCz = (plotWaystonePos.getZ() - 33) >> 4;
+            int maxPlotCz = (plotWaystonePos.getZ() + 34) >> 4;
+            var newEmptyChunkMh = lookup.findVirtual(levelPlotClass, "newEmptyChunk", MethodType.methodType(void.class, ChunkPos.class));
+            for (int cx = minPlotCx; cx <= maxPlotCx; cx++) {
+                for (int cz = minPlotCz; cz <= maxPlotCz; cz++) {
+                    newEmptyChunkMh.invoke(plot, new ChunkPos(cx, cz));
+                }
+            }
+            for (int dx = -41; dx <= 42; dx++) {
+                for (int dz = -33; dz <= 34; dz++) {
+                    level.setBlockAndUpdate(plotWaystonePos.offset(dx, -1, dz), Blocks.STONE.defaultBlockState());
+                }
+            }
+            Waystone shipWaystone = WaystonesAPI.placeWaystone(level, plotWaystonePos, WaystoneStyles.DEFAULT)
+                .orElseThrow(() -> new AssertionError("Failed to place Waystone on 84x68 Sable airship"));
+
+            Object logicalPose = subLevel.getClass().getMethod("logicalPose").invoke(subLevel);
+            Vector3d rotPoint = (Vector3d) logicalPose.getClass().getMethod("rotationPoint").invoke(logicalPose);
+            Vector3d worldPosVec = (Vector3d) logicalPose.getClass().getMethod("position").invoke(logicalPose);
+            rotPoint.set(plotWaystonePos.getX() + 0.5, plotWaystonePos.getY() + 0.5, plotWaystonePos.getZ() + 0.5);
+            worldPosVec.set(targetWorldX, targetWorldY, targetWorldZ);
+            subLevel.getClass().getMethod("forceUpdateGlobalBounds").invoke(subLevel);
+
+            // Unload to an offset holdingChunk (-4, -3) chunks away, saveAll(), and clear RAM holding maps + PhysicsPosStorage
+            ChunkPos projectedChunk = new ChunkPos(BlockPos.containing(targetWorldX, targetWorldY, targetWorldZ));
+            ChunkPos offsetHoldingChunk = new ChunkPos(projectedChunk.x - 4, projectedChunk.z - 3);
+            Object holdingMap = lookup.findVirtual(serverContainerClass, "getHoldingChunkMap", MethodType.methodType(holdingMapClass))
+                .invoke(container);
+            lookup.findVirtual(holdingMapClass, "moveToUnloaded", MethodType.methodType(void.class, serverSubLevelClass, ChunkPos.class))
+                .invoke(holdingMap, subLevel, offsetHoldingChunk);
+            lookup.findVirtual(holdingMapClass, "updateChunkStatus", MethodType.methodType(void.class, ChunkPos.class, boolean.class))
+                .invoke(holdingMap, offsetHoldingChunk, false);
+            lookup.findVirtual(holdingMapClass, "saveAll", MethodType.methodType(void.class))
+                .invoke(holdingMap);
+
+            var allHoldingField = holdingMapClass.getDeclaredField("allHoldingSubLevels");
+            allHoldingField.setAccessible(true);
+            ((java.util.Map<?, ?>) allHoldingField.get(holdingMap)).clear();
+            var loadedChunksField = holdingMapClass.getDeclaredField("loadedHoldingChunks");
+            loadedChunksField.setAccessible(true);
+            ((java.util.Map<?, ?>) loadedChunksField.get(holdingMap)).clear();
+
+            resolverClass.getMethod("removeServerPosition", MinecraftServer.class, UUID.class)
+                .invoke(null, level.getServer(), shipWaystone.getWaystoneUid());
+            bridgeClass.getMethod("clearOfflineCaches").invoke(null);
+
+            Object afterUnloadProj = bridgeClass.getMethod("projectToWorld", Level.class, double.class, double.class, double.class)
+                .invoke(null, level, plotWaystonePos.getX() + 0.5, plotWaystonePos.getY() + 0.5, plotWaystonePos.getZ() + 0.5);
+            helper.assertTrue(afterUnloadProj == null, "6x5 airship SubLevel must be unloaded before cold-start teleport");
+
+            // Give 4 emerald blocks (36 emeralds); ~3124m cost should be ~32 emeralds -> 4 emeralds change returned
+            player.getInventory().setItem(0, new ItemStack(Items.EMERALD_BLOCK, 4));
+            var teleports = WaystonesConfig.getActive().teleports;
+            boolean prevEnableCosts = teleports.enableCosts;
+            boolean prevEnableCooldowns = teleports.enableCooldowns;
+            List<String> prevRequirements = teleports.warpRequirements;
+            teleports.enableCosts = true;
+            teleports.enableCooldowns = false;
+            teleports.warpRequirements = new ArrayList<>(List.of(
+                "add_item_cost(minecraft:emerald, 1)",
+                "scaled_add_item_cost(distance, minecraft:emerald, 0.01)",
+                "[is_not_within_distance(4000)] add_item_cost(minecraft:emerald, 9999)"
+            ));
+
+            var ctx = WaystonesAPI.createUncheckedDefaultTeleportContext(player, shipWaystone, c -> c.setFromWaystone(pair.source()))
+                .left()
+                .orElseThrow(() -> new AssertionError("Failed to create teleport context for 6x5 airship"));
+
+            AtomicReference<Either<List<Entity>, WaystoneTeleportError>> resultRef = new AtomicReference<>();
+            WaystonesAPI.tryTeleportAsync(ctx).thenAccept(resultRef::set);
+
+            helper.succeedWhen(() -> {
+                var res = resultRef.get();
+                helper.assertTrue(res != null, "Waiting for 6x5 airship cold-start async teleport completion");
+                try {
+                    helper.assertTrue(res.left().isPresent(),
+                        "6x5 multi-chunk airship cold-start teleport MUST succeed! Error: " + res.right());
+                    Object afterWakeProj = bridgeClass.getMethod("projectToWorld", Level.class, double.class, double.class, double.class)
+                        .invoke(null, level, plotWaystonePos.getX() + 0.5, plotWaystonePos.getY() + 0.5, plotWaystonePos.getZ() + 0.5);
+                    helper.assertTrue(afterWakeProj != null,
+                        "6x5 airship SubLevel must be woken up and projected after teleport");
+
+                    int blocksLeft = countInMainInventory(player.getInventory(), Items.EMERALD_BLOCK);
+                    int emeraldsLeft = countInMainInventory(player.getInventory(), Items.EMERALD);
+                    int paid = 36 - (blocksLeft * 9 + emeraldsLeft);
+                    helper.assertTrue(paid >= 30 && paid <= 34,
+                        "Expected realistic fee 30..34 emeralds for ~3124m 6x5 airship teleport, paid " + paid);
+                    helper.assertTrue(blocksLeft == 0 && emeraldsLeft > 0,
+                        "Expected emerald block break with change returned, got blocks=" + blocksLeft + ", emeralds=" + emeraldsLeft);
+
+                    Class<?> guardClass = Class.forName("dev.rinchan.waystonesitemcost.MixinGuard");
+                    Object logged = guardClass.getMethod("loggedHooks").invoke(null);
+                    helper.assertTrue(logged instanceof java.util.Set<?> set && set.isEmpty(),
+                        "Expected ZERO MixinGuard hook failures after 6x5 airship test, got: " + logged);
+                } catch (Throwable t) {
+                    if (t instanceof AssertionError ae) {
+                        throw ae;
+                    }
+                    throw new AssertionError("Failed to verify 6x5 airship post-wakeup state", t);
+                } finally {
+                    teleports.enableCosts = prevEnableCosts;
+                    teleports.enableCooldowns = prevEnableCooldowns;
+                    teleports.warpRequirements = prevRequirements;
+                }
+            });
+        } catch (Throwable e) {
+            if (e instanceof AssertionError ae) {
+                throw ae;
+            }
+            throw new AssertionError("6x5 airship Sable 2.0.6 E2E setup failed", e);
+        }
+    }
 }

@@ -15,6 +15,7 @@ import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.UUID;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 import org.junit.jupiter.api.Test;
@@ -190,6 +191,87 @@ final class SableOfflineStorageTest {
         assertEquals(4, s.header().plotZ());
     }
 
+    @Test
+    void streamsUuidAndWorldBoundsAndComputesClampedChunkBounds(@TempDir Path dir) throws IOException {
+        UUID shipUuid = UUID.fromString("12345678-9abc-def0-1234-56789abcdef0");
+        // 84x68 airship centered near (2400.5, 70.5, -2000.5) -> spans 6x5 chunks
+        double posX = 2400.5;
+        double posY = 70.5;
+        double posZ = -2000.5;
+        double minX = posX - 42.0; // 2358.5 -> chunk 147
+        double maxX = posX + 42.0; // 2442.5 -> chunk 152 (6 chunks: 147..152)
+        double minZ = posZ - 34.0; // -2034.5 -> chunk -128
+        double maxZ = posZ + 34.0; // -1966.5 -> chunk -123 (6 chunks with +-1 pad: -128..-123)
+
+        byte[] slvlrPayload = gzip(buildPointersNbt(new int[]{0, 1}));
+        byte[] slvlrFile = new byte[4096 + 128];
+        ByteBuffer.wrap(slvlrFile).putInt(0, (32 << 8) | 1);
+        ByteBuffer slvlrEntry = ByteBuffer.wrap(slvlrFile, 4096, 128);
+        slvlrEntry.putInt(slvlrPayload.length + 1);
+        slvlrEntry.put((byte) 0);
+        slvlrEntry.put(slvlrPayload);
+        Files.write(dir.resolve("r.0.0.slvlr"), slvlrFile);
+
+        byte[] slvlsPayload = gzip(buildSubLevelNbt(
+            shipUuid,
+            1, 2,
+            posX, posY, posZ,
+            20_480_100.5, 70.5, 20_480_200.5,
+            0.0, 0.0, 0.0, 1.0,
+            true,
+            true, minX, minZ, maxX, maxZ
+        ));
+        int sectors = (slvlsPayload.length + 5 + 4095) / 4096;
+        byte[] slvlsFile = new byte[(1 + sectors) * 4096];
+        ByteBuffer.wrap(slvlsFile).putInt(0, (1 << 8) | sectors);
+        ByteBuffer slvlsEntry = ByteBuffer.wrap(slvlsFile, 4096, sectors * 4096);
+        slvlsEntry.putInt(slvlsPayload.length + 1);
+        slvlsEntry.put((byte) 0);
+        slvlsEntry.put(slvlsPayload);
+        Files.write(dir.resolve("r.0.0.0.slvls"), slvlsFile);
+
+        List<SableOfflineStorage.ScannedSubLevel> scanned = SableOfflineStorage.scanDirectoryReadOnly(
+            dir,
+            SableOfflineStorageTest::readPointersPureJava,
+            SableOfflineStorageTest::readHeaderPureJava
+        );
+        assertEquals(1, scanned.size());
+        SableOfflineStorage.OfflineHeader header = scanned.get(0).header();
+        assertEquals(shipUuid, header.subLevelUuid());
+        assertTrue(header.hasWorldBounds());
+        assertEquals(minX, header.minX(), EPS);
+        assertEquals(minZ, header.minZ(), EPS);
+        assertEquals(maxX, header.maxX(), EPS);
+        assertEquals(maxZ, header.maxZ(), EPS);
+
+        SableOfflineStorage.ChunkBounds bounds = header.worldChunkBounds();
+        assertEquals(((int) Math.floor(minX - 1.0)) >> 4, bounds.minChunkX());
+        assertEquals(((int) Math.floor(maxX + 1.0)) >> 4, bounds.maxChunkX());
+        assertEquals(((int) Math.floor(minZ - 1.0)) >> 4, bounds.minChunkZ());
+        assertEquals(((int) Math.floor(maxZ + 1.0)) >> 4, bounds.maxChunkZ());
+
+        // Fallback when world_bounds is absent -> DEFAULT_FALLBACK_RADIUS (2) around centerChunk
+        SableOfflineStorage.OfflineHeader noBounds = new SableOfflineStorage.OfflineHeader(
+            1, 2, posX, posY, posZ, 0, 0, 0, 1, 0, 0, 0
+        );
+        SableOfflineStorage.ChunkBounds fallback = noBounds.worldChunkBounds();
+        assertEquals(noBounds.centerChunk().x() - 2, fallback.minChunkX());
+        assertEquals(noBounds.centerChunk().x() + 2, fallback.maxChunkX());
+        assertEquals(noBounds.centerChunk().z() - 2, fallback.minChunkZ());
+        assertEquals(noBounds.centerChunk().z() + 2, fallback.maxChunkZ());
+
+        // Clamping when AABB exceeds MAX_CLAMP_RADIUS (8)
+        SableOfflineStorage.OfflineHeader huge = new SableOfflineStorage.OfflineHeader(
+            shipUuid, 1, 2, posX, posY, posZ, 0, 0, 0, 1, 0, 0, 0,
+            true, posX - 500.0, posZ - 500.0, posX + 500.0, posZ + 500.0
+        );
+        SableOfflineStorage.ChunkBounds clamped = huge.worldChunkBounds();
+        assertEquals(huge.centerChunk().x() - 8, clamped.minChunkX());
+        assertEquals(huge.centerChunk().x() + 8, clamped.maxChunkX());
+        assertEquals(huge.centerChunk().z() - 8, clamped.minChunkZ());
+        assertEquals(huge.centerChunk().z() + 8, clamped.maxChunkZ());
+    }
+
     // ---- Pure-Java NBT encoding/streaming helpers for logic-module tests ----
 
     private static byte[] gzip(byte[] raw) throws IOException {
@@ -222,10 +304,50 @@ final class SableOfflineStorageTest {
         double qx, double qy, double qz, double qw,
         boolean includeHeavyChunks
     ) throws IOException {
+        return buildSubLevelNbt(
+            null, plotX, plotZ, posX, posY, posZ, rotX, rotY, rotZ, qx, qy, qz, qw,
+            includeHeavyChunks, false, 0.0, 0.0, 0.0, 0.0
+        );
+    }
+
+    private static byte[] buildSubLevelNbt(
+        UUID subLevelUuid,
+        int plotX, int plotZ,
+        double posX, double posY, double posZ,
+        double rotX, double rotY, double rotZ,
+        double qx, double qy, double qz, double qw,
+        boolean includeHeavyChunks,
+        boolean includeWorldBounds,
+        double minX, double minZ, double maxX, double maxZ
+    ) throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         DataOutputStream out = new DataOutputStream(baos);
         out.writeByte(10); // root compound
         out.writeUTF("");
+
+        if (subLevelUuid != null) {
+            out.writeByte(11); // int array
+            out.writeUTF("uuid");
+            out.writeInt(4);
+            long most = subLevelUuid.getMostSignificantBits();
+            long least = subLevelUuid.getLeastSignificantBits();
+            out.writeInt((int) (most >>> 32));
+            out.writeInt((int) most);
+            out.writeInt((int) (least >>> 32));
+            out.writeInt((int) least);
+        }
+
+        if (includeWorldBounds) {
+            out.writeByte(10);
+            out.writeUTF("world_bounds");
+            out.writeByte(6); out.writeUTF("minX"); out.writeDouble(minX);
+            out.writeByte(6); out.writeUTF("minY"); out.writeDouble(posY - 2.0);
+            out.writeByte(6); out.writeUTF("minZ"); out.writeDouble(minZ);
+            out.writeByte(6); out.writeUTF("maxX"); out.writeDouble(maxX);
+            out.writeByte(6); out.writeUTF("maxY"); out.writeDouble(posY + 4.0);
+            out.writeByte(6); out.writeUTF("maxZ"); out.writeDouble(maxZ);
+            out.writeByte(0); // end world_bounds
+        }
 
         // plot compound
         out.writeByte(10);
@@ -302,16 +424,42 @@ final class SableOfflineStorageTest {
             if (dis.readByte() != 10) return null;
             skipString(dis);
             Integer plotX = null, plotZ = null;
+            UUID subLevelUuid = null;
             double posX = 0, posY = 0, posZ = 0;
             double rotX = 0, rotY = 0, rotZ = 0;
             double qx = 0, qy = 0, qz = 0, qw = 1.0;
             boolean hasPos = false, hasRot = false;
+            boolean hasMinX = false, hasMinZ = false, hasMaxX = false, hasMaxZ = false;
+            double minX = 0, minZ = 0, maxX = 0, maxZ = 0;
 
             while (true) {
                 byte t = dis.readByte();
                 if (t == 0) break;
                 String name = dis.readUTF();
-                if (t == 10 && "plot".equals(name)) {
+                if (t == 11 && "uuid".equals(name)) {
+                    int len = dis.readInt();
+                    if (len == 4) {
+                        int a = dis.readInt(), b = dis.readInt(), c = dis.readInt(), d = dis.readInt();
+                        long most = ((long) a << 32) | (b & 0xFFFFFFFFL);
+                        long least = ((long) c << 32) | (d & 0xFFFFFFFFL);
+                        subLevelUuid = new UUID(most, least);
+                    } else {
+                        dis.skipNBytes((long) len * 4L);
+                    }
+                } else if (t == 10 && "world_bounds".equals(name)) {
+                    while (true) {
+                        byte pt = dis.readByte();
+                        if (pt == 0) break;
+                        String pname = dis.readUTF();
+                        switch (pname) {
+                            case "minX" -> { minX = readNumber(dis, pt); hasMinX = true; }
+                            case "minZ" -> { minZ = readNumber(dis, pt); hasMinZ = true; }
+                            case "maxX" -> { maxX = readNumber(dis, pt); hasMaxX = true; }
+                            case "maxZ" -> { maxZ = readNumber(dis, pt); hasMaxZ = true; }
+                            default -> skipPayload(dis, pt);
+                        }
+                    }
+                } else if (t == 10 && "plot".equals(name)) {
                     while (true) {
                         byte pt = dis.readByte();
                         if (pt == 0) break;
@@ -347,8 +495,11 @@ final class SableOfflineStorageTest {
             if (plotX == null || plotZ == null || !hasPos || !hasRot) {
                 return null;
             }
+            boolean hasWorldBounds = hasMinX && hasMinZ && hasMaxX && hasMaxZ;
             return new SableOfflineStorage.OfflineHeader(
-                plotX, plotZ, posX, posY, posZ, qx, qy, qz, qw, rotX, rotY, rotZ
+                subLevelUuid,
+                plotX, plotZ, posX, posY, posZ, qx, qy, qz, qw, rotX, rotY, rotZ,
+                hasWorldBounds, minX, minZ, maxX, maxZ
             );
         }
     }

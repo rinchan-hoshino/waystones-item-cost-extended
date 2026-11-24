@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.1.4
+
+- **Multi-Chunk Airship Cold-Start Wakeup (`1.21.1` & `26.x`)**: Extended `SableHeaderStreamVisitor` to stream top-level `uuid` and `world_bounds` (`minX..maxZ`) without allocating `plot.chunks`, and added full-bounding-box `BLOCK_TICKING` chunk tickets (`worldChunkBounds()` + `.slvlr` `holdingChunk`) during `WaystoneTeleportEvent.Prepare` so large multi-chunk airships wake reliably from cold storage.
+- **Sable Cold-Start `HoldingChunkMap` Rehydration Fix**: Updated `PhysicsModBridge` to rehydrate unloaded `SubLevel`s from disk (`*.slvlr` / `*.slvls`) and trigger `ServerChunkCache` distance-manager updates even when `allHoldingSubLevels` is empty after a server restart.
+- **Config Screen Button Width**: Widened `WaystonesItemCostConfigScreen` option buttons (`Math.min(290, Math.max(240, this.width - 40))`) across `1.20.1`, `1.21.1`, and `26.x` so long English labels fit without overflow.
+
 ## 2.1.3
 
 - **Balm 21.0.67 NeoForge `ServerTickEvent` Fix**: Replaced `Balm.getEvents().onTickEvent(TickType.Server, ...)` (which registers the abstract `ServerTickEvent` class on Balm 21.0.67 / NeoForge 1.21.1 and throws `IllegalArgumentException`) with loader-native server tick hooks (`NeoForge.EVENT_BUS` `ServerTickEvent.Post`, Fabric `ServerTickEvents.END_SERVER_TICK`, Forge `TickEvent.ServerTickEvent`) and isolated every registration in `NetworkingMixin` and `PhysicsPosSync` with independent `MixinGuard` guards.

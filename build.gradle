@@ -95,7 +95,7 @@ ext.adapterDirFor = { String mc ->
 }
 
 ext.commonMixinsFor = { String generation ->
-    if (generation == 'legacy') return '"NetworkingMixin", "LegacyPhysicsDistanceMixin", "LegacyWaystoneMenuSyncMixin"'
+    if (generation == 'legacy') return '"NetworkingMixin", "LegacyPhysicsDistanceMixin", "LegacyWaystoneMenuSyncMixin", "LegacyPhysicsWakeupMixin"'
     if (generation == 'requirement') return '"PaymentRequirementMixin", "ItemRequirementMixin", "ItemRequirementsContextMixin", "NetworkingMixin", "PhysicsRequirementDistanceMixin", "PhysicsDistanceComparatorMixin"'
     return '"ItemCostMixin", "NetworkingMixin", "PhysicsTeleportContextMixin", "PhysicsIsWithinDistanceMixin", "PhysicsDistanceComparatorMixin"'
 }

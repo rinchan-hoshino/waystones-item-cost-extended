@@ -1,5 +1,6 @@
 package dev.rinchan.waystonesitemcost.physics;
 
+import java.util.UUID;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.StreamTagVisitor;
@@ -8,15 +9,16 @@ import net.minecraft.nbt.TagType;
 /**
  * Zero-allocation streaming NBT visitors for Sable offline sub-level files.
  *
- * {@link #headerVisitor()} extracts only top-level {@code plot.{plot_x, plot_z}} and
- * {@code pose.{position, orientation, rotation_point}}, returning {@link EntryResult#SKIP}
- * immediately on {@code plot.chunks} and every other heavy subtree so multi-MB airship
- * block palettes are never allocated on the heap.
+ * Extracts top-level {@code uuid}, {@code plot.{plot_x, plot_z}},
+ * {@code pose.{position, orientation, rotation_point}}, and {@code world_bounds.{minX..maxZ}},
+ * returning {@link EntryResult#SKIP} immediately on {@code plot.chunks} and every other heavy
+ * subtree so multi-MB airship block palettes are never allocated on the heap.
  */
 public final class SableHeaderStreamVisitor implements StreamTagVisitor {
     private static final int SECTION_NONE = 0;
     private static final int SECTION_PLOT = 1;
     private static final int SECTION_POSE = 2;
+    private static final int SECTION_WORLD_BOUNDS = 3;
 
     private static final int SUB_NONE = 0;
     private static final int SUB_POSITION = 1;
@@ -36,20 +38,34 @@ public final class SableHeaderStreamVisitor implements StreamTagVisitor {
     private static final int FIELD_ORI_Y = 10;
     private static final int FIELD_ORI_Z = 11;
     private static final int FIELD_ORI_W = 12;
+    private static final int FIELD_UUID = 13;
+    private static final int FIELD_BOUNDS_MIN_X = 14;
+    private static final int FIELD_BOUNDS_MIN_Y = 15;
+    private static final int FIELD_BOUNDS_MIN_Z = 16;
+    private static final int FIELD_BOUNDS_MAX_X = 17;
+    private static final int FIELD_BOUNDS_MAX_Y = 18;
+    private static final int FIELD_BOUNDS_MAX_Z = 19;
 
     private int depth;
     private int section = SECTION_NONE;
     private int subSection = SUB_NONE;
     private int field = FIELD_NONE;
 
+    private boolean doneUuid;
     private boolean donePlot;
     private boolean donePose;
+    private boolean doneWorldBounds;
 
     private boolean hasPlotX;
     private boolean hasPlotZ;
     private boolean hasPosition;
     private boolean hasRotationPoint;
+    private boolean hasMinX;
+    private boolean hasMinZ;
+    private boolean hasMaxX;
+    private boolean hasMaxZ;
 
+    private UUID subLevelUuid;
     private int plotX;
     private int plotZ;
     private double posX;
@@ -62,13 +78,20 @@ public final class SableHeaderStreamVisitor implements StreamTagVisitor {
     private double qy;
     private double qz;
     private double qw = 1.0;
+    private double minX;
+    private double minZ;
+    private double maxX;
+    private double maxZ;
 
     public SableOfflineStorage.OfflineHeader buildHeader() {
         if (!hasPlotX || !hasPlotZ || !hasPosition || !hasRotationPoint) {
             return null;
         }
+        boolean hasBounds = hasMinX && hasMinZ && hasMaxX && hasMaxZ;
         return new SableOfflineStorage.OfflineHeader(
-            plotX, plotZ, posX, posY, posZ, qx, qy, qz, qw, rotX, rotY, rotZ
+            subLevelUuid,
+            plotX, plotZ, posX, posY, posZ, qx, qy, qz, qw, rotX, rotY, rotZ,
+            hasBounds, minX, minZ, maxX, maxZ
         );
     }
 
@@ -100,6 +123,14 @@ public final class SableHeaderStreamVisitor implements StreamTagVisitor {
                     section = SECTION_POSE;
                     return EntryResult.ENTER;
                 }
+                if ("world_bounds".equals(name)) {
+                    depth = 2;
+                    section = SECTION_WORLD_BOUNDS;
+                    return EntryResult.ENTER;
+                }
+            } else if ("uuid".equals(name) && type != ListTag.TYPE) {
+                field = FIELD_UUID;
+                return EntryResult.ENTER;
             }
             return EntryResult.SKIP;
         }
@@ -116,6 +147,21 @@ public final class SableHeaderStreamVisitor implements StreamTagVisitor {
                 }
             }
             // Zero-allocation skip for plot.chunks, neoforge:attachments, etc.
+            return EntryResult.SKIP;
+        }
+
+        if (depth == 2 && section == SECTION_WORLD_BOUNDS) {
+            if (type != CompoundTag.TYPE && type != ListTag.TYPE) {
+                switch (name) {
+                    case "minX" -> { field = FIELD_BOUNDS_MIN_X; return EntryResult.ENTER; }
+                    case "minY" -> { field = FIELD_BOUNDS_MIN_Y; return EntryResult.ENTER; }
+                    case "minZ" -> { field = FIELD_BOUNDS_MIN_Z; return EntryResult.ENTER; }
+                    case "maxX" -> { field = FIELD_BOUNDS_MAX_X; return EntryResult.ENTER; }
+                    case "maxY" -> { field = FIELD_BOUNDS_MAX_Y; return EntryResult.ENTER; }
+                    case "maxZ" -> { field = FIELD_BOUNDS_MAX_Z; return EntryResult.ENTER; }
+                    default -> { }
+                }
+            }
             return EntryResult.SKIP;
         }
 
@@ -180,6 +226,10 @@ public final class SableHeaderStreamVisitor implements StreamTagVisitor {
             case FIELD_ORI_Y -> qy = doubleVal;
             case FIELD_ORI_Z -> qz = doubleVal;
             case FIELD_ORI_W -> qw = doubleVal;
+            case FIELD_BOUNDS_MIN_X -> { minX = doubleVal; hasMinX = true; }
+            case FIELD_BOUNDS_MIN_Z -> { minZ = doubleVal; hasMinZ = true; }
+            case FIELD_BOUNDS_MAX_X -> { maxX = doubleVal; hasMaxX = true; }
+            case FIELD_BOUNDS_MAX_Z -> { maxZ = doubleVal; hasMaxZ = true; }
             default -> { }
         }
         field = FIELD_NONE;
@@ -236,6 +286,17 @@ public final class SableHeaderStreamVisitor implements StreamTagVisitor {
 
     @Override
     public ValueResult visit(int[] value) {
+        if (field == FIELD_UUID && depth == 1 && value != null && value.length == 4) {
+            long most = ((long) value[0] << 32) | (value[1] & 0xFFFFFFFFL);
+            long least = ((long) value[2] << 32) | (value[3] & 0xFFFFFFFFL);
+            subLevelUuid = new UUID(most, least);
+            doneUuid = true;
+            field = FIELD_NONE;
+            if (doneUuid && donePlot && donePose && doneWorldBounds) {
+                return ValueResult.HALT;
+            }
+            return ValueResult.CONTINUE;
+        }
         field = FIELD_NONE;
         return ValueResult.CONTINUE;
     }
@@ -268,11 +329,13 @@ public final class SableHeaderStreamVisitor implements StreamTagVisitor {
                 donePlot = true;
             } else if (section == SECTION_POSE) {
                 donePose = true;
+            } else if (section == SECTION_WORLD_BOUNDS) {
+                doneWorldBounds = true;
             }
             depth = 1;
             section = SECTION_NONE;
             subSection = SUB_NONE;
-            if (donePlot && donePose) {
+            if (doneUuid && donePlot && donePose && doneWorldBounds) {
                 return ValueResult.HALT;
             }
         } else if (depth == 1) {

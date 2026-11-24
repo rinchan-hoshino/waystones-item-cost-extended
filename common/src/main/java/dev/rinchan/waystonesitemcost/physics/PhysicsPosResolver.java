@@ -146,6 +146,16 @@ public final class PhysicsPosResolver {
         ResourceKey<Level> dimension,
         BlockPos pos
     ) {
+        return resolveOfflineLocationOnServer(server, waystoneUid, dimension, pos, false);
+    }
+
+    public static PhysicsModBridge.OfflineSubLevelLocation resolveOfflineLocationOnServer(
+        MinecraftServer server,
+        UUID waystoneUid,
+        ResourceKey<Level> dimension,
+        BlockPos pos,
+        boolean bypassNegativeCache
+    ) {
         if (server == null || waystoneUid == null || dimension == null || pos == null) {
             return null;
         }
@@ -157,7 +167,12 @@ public final class PhysicsPosResolver {
             return null;
         }
         Vec3 center = Vec3.atCenterOf(pos);
-        PhysicsModBridge.OfflineSubLevelLocation loc = PhysicsModBridge.resolveOfflineSable(level, center.x, center.y, center.z);
+        PhysicsModBridge.OfflineSubLevelLocation loc = PhysicsModBridge.isSableLoaded()
+            ? PhysicsModBridge.resolveOfflineSable(level, center.x, center.y, center.z, bypassNegativeCache)
+            : null;
+        if (loc == null && PhysicsModBridge.isVs2Loaded()) {
+            loc = PhysicsModBridge.resolveVs2ShipBounds(level, center.x, center.y, center.z);
+        }
         if (loc != null && loc.worldPos() != null) {
             PhysicsPosStorage.get(server).put(waystoneUid, PhysicsPosStorage.dimensionId(dimension), loc.worldPos());
         }

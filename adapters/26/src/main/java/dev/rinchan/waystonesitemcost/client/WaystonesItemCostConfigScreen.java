@@ -32,7 +32,7 @@ public final class WaystonesItemCostConfigScreen extends Screen {
     @Override
     protected void init() {
         int centerX = this.width / 2;
-        int w = 240;
+        int w = Math.min(290, Math.max(240, this.width - 40));
         int x = centerX - w / 2;
         int y = 56;
 

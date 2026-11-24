@@ -13,7 +13,7 @@ def hasNoMojangMappings = minecraft_version in ['26.2', '26.3']
 def dependencyConfiguration = hasNoMojangMappings ? 'implementation' : 'modImplementation'
 def adapterDir = minecraft_version == '1.20.1' ? '1.20.1' : minecraft_version == '1.21.1' ? '1.21.1' : '26'
 def commonMixins = source_generation == 'legacy'
-    ? '"NetworkingMixin", "LegacyPhysicsDistanceMixin", "LegacyWaystoneMenuSyncMixin"'
+    ? '"NetworkingMixin", "LegacyPhysicsDistanceMixin", "LegacyWaystoneMenuSyncMixin", "LegacyPhysicsWakeupMixin"'
     : source_generation == 'requirement'
         ? '"PaymentRequirementMixin", "ItemRequirementMixin", "ItemRequirementsContextMixin", "NetworkingMixin", "PhysicsRequirementDistanceMixin", "PhysicsDistanceComparatorMixin"'
         : '"ItemCostMixin", "NetworkingMixin", "PhysicsTeleportContextMixin", "PhysicsIsWithinDistanceMixin", "PhysicsDistanceComparatorMixin"'

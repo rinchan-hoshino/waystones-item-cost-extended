@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 /**
  * Pure-Java read-only scanner for Sable 2.0.x offline sub-level storage files:
@@ -43,7 +44,56 @@ public final class SableOfflineStorage {
     public record ChunkCoords(int x, int z) {
     }
 
+    public record ChunkBounds(int minChunkX, int minChunkZ, int maxChunkX, int maxChunkZ) {
+        public static final int DEFAULT_FALLBACK_RADIUS = 2;
+        public static final int MAX_CLAMP_RADIUS = 8;
+
+        public static ChunkBounds fromWorldAabb(
+            double minX,
+            double minZ,
+            double maxX,
+            double maxZ,
+            ChunkCoords centerChunk
+        ) {
+            int rawMinCx = ((int) Math.floor(minX - 1.0)) >> 4;
+            int rawMinCz = ((int) Math.floor(minZ - 1.0)) >> 4;
+            int rawMaxCx = ((int) Math.floor(maxX + 1.0)) >> 4;
+            int rawMaxCz = ((int) Math.floor(maxZ + 1.0)) >> 4;
+            if (rawMinCx > rawMaxCx) {
+                int tmp = rawMinCx;
+                rawMinCx = rawMaxCx;
+                rawMaxCx = tmp;
+            }
+            if (rawMinCz > rawMaxCz) {
+                int tmp = rawMinCz;
+                rawMinCz = rawMaxCz;
+                rawMaxCz = tmp;
+            }
+            if (centerChunk != null) {
+                int loX = centerChunk.x() - MAX_CLAMP_RADIUS;
+                int hiX = centerChunk.x() + MAX_CLAMP_RADIUS;
+                int loZ = centerChunk.z() - MAX_CLAMP_RADIUS;
+                int hiZ = centerChunk.z() + MAX_CLAMP_RADIUS;
+                rawMinCx = Math.max(loX, Math.min(hiX, rawMinCx));
+                rawMaxCx = Math.max(loX, Math.min(hiX, rawMaxCx));
+                rawMinCz = Math.max(loZ, Math.min(hiZ, rawMinCz));
+                rawMaxCz = Math.max(loZ, Math.min(hiZ, rawMaxCz));
+            }
+            return new ChunkBounds(rawMinCx, rawMinCz, rawMaxCx, rawMaxCz);
+        }
+
+        public static ChunkBounds aroundCenter(ChunkCoords centerChunk, int radius) {
+            return new ChunkBounds(
+                centerChunk.x() - radius,
+                centerChunk.z() - radius,
+                centerChunk.x() + radius,
+                centerChunk.z() + radius
+            );
+        }
+    }
+
     public record OfflineHeader(
+        UUID subLevelUuid,
         int plotX,
         int plotZ,
         double posX,
@@ -55,8 +105,30 @@ public final class SableOfflineStorage {
         double qw,
         double rotX,
         double rotY,
-        double rotZ
+        double rotZ,
+        boolean hasWorldBounds,
+        double minX,
+        double minZ,
+        double maxX,
+        double maxZ
     ) {
+        public OfflineHeader(
+            int plotX,
+            int plotZ,
+            double posX,
+            double posY,
+            double posZ,
+            double qx,
+            double qy,
+            double qz,
+            double qw,
+            double rotX,
+            double rotY,
+            double rotZ
+        ) {
+            this(null, plotX, plotZ, posX, posY, posZ, qx, qy, qz, qw, rotX, rotY, rotZ, false, 0.0, 0.0, 0.0, 0.0);
+        }
+
         public PhysicsPosCore.Vec3d project(double x, double y, double z) {
             return PhysicsPosCore.transformPose(
                 new PhysicsPosCore.Vec3d(x, y, z),
@@ -70,6 +142,14 @@ public final class SableOfflineStorage {
             int bx = (int) Math.floor(posX);
             int bz = (int) Math.floor(posZ);
             return new ChunkCoords(bx >> 4, bz >> 4);
+        }
+
+        public ChunkBounds worldChunkBounds() {
+            ChunkCoords center = centerChunk();
+            if (!hasWorldBounds) {
+                return ChunkBounds.aroundCenter(center, ChunkBounds.DEFAULT_FALLBACK_RADIUS);
+            }
+            return ChunkBounds.fromWorldAabb(minX, minZ, maxX, maxZ, center);
         }
     }
 

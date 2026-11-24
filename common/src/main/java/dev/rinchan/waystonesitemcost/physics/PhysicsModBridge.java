@@ -11,11 +11,14 @@ import java.nio.file.Path;
 import java.util.BitSet;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Position;
 import net.minecraft.core.Vec3i;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.server.level.ServerChunkCache;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
@@ -58,17 +61,45 @@ public final class PhysicsModBridge {
     private static MethodHandle sableHoldingSubLevelData;
     private static MethodHandle sableHoldingSubLevelPointer;
     private static MethodHandle sablePointerChunkPos;
+    private static MethodHandle sablePointerStorageIndex;
+    private static MethodHandle sablePointerSubLevelIndex;
+    private static MethodHandle sableGlobalPtrCtor;
+    private static MethodHandle sableHoldingSnatchAndLoad;
+    private static MethodHandle sableHoldingGetHoldingSubLevel;
     private static MethodHandle sableDataFullTag;
     private static MethodHandle sableDataOriginChunk;
+    private static MethodHandle sableDataUuid;
+    private static MethodHandle sableDataBounds;
+    private static MethodHandle sableBoundsMinX;
+    private static MethodHandle sableBoundsMinZ;
+    private static MethodHandle sableBoundsMaxX;
+    private static MethodHandle sableBoundsMaxZ;
+    private static MethodHandle runDistanceManagerUpdatesHandle;
 
     private static final long OFFLINE_CACHE_TTL_MS = 30_000L;
     private static final long NEGATIVE_CACHE_TTL_MS = 60_000L;
 
-    public record OfflineSubLevelLocation(PhysicsPosCore.Vec3d worldPos, ChunkPos holdingChunk) {}
+    public record OfflineSubLevelLocation(
+        PhysicsPosCore.Vec3d worldPos,
+        ChunkPos holdingChunk,
+        UUID subLevelUuid,
+        int storageIdx,
+        int subLevelIdx,
+        int minChunkX,
+        int minChunkZ,
+        int maxChunkX,
+        int maxChunkZ
+    ) {
+        public boolean hasChunkBounds() {
+            return minChunkX <= maxChunkX && minChunkZ <= maxChunkZ;
+        }
+    }
 
     private record OfflinePoseEntry(
         SableOfflineStorage.OfflineHeader header,
         ChunkPos holdingChunk,
+        int storageIdx,
+        int subLevelIdx,
         long cachedAtMs
     ) {
         int plotX() {
@@ -91,6 +122,25 @@ public final class PhysicsModBridge {
         ChunkPos effectiveHoldingChunk() {
             return holdingChunk != null ? holdingChunk : centerChunk();
         }
+
+        OfflineSubLevelLocation toLocation(double x, double y, double z) {
+            PhysicsPosCore.Vec3d projected = project(x, y, z);
+            if (projected == null) {
+                return null;
+            }
+            SableOfflineStorage.ChunkBounds bounds = header.worldChunkBounds();
+            return new OfflineSubLevelLocation(
+                projected,
+                effectiveHoldingChunk(),
+                header.subLevelUuid(),
+                storageIdx,
+                subLevelIdx,
+                bounds.minChunkX(),
+                bounds.minChunkZ(),
+                bounds.maxChunkX(),
+                bounds.maxChunkZ()
+            );
+        }
     }
 
     private static final ConcurrentHashMap<String, OfflinePoseEntry> OFFLINE_POSE_CACHE = new ConcurrentHashMap<>();
@@ -99,9 +149,17 @@ public final class PhysicsModBridge {
     // Valkyrien Skies 2 handles
     private static MethodHandle vs2IsBlockInShipyard;
     private static MethodHandle vs2GetShipManagingPos;
+    private static MethodHandle vs2GetShipObjectWorld;
+    private static MethodHandle vs2GetAllShips;
+    private static MethodHandle vs2AllShipsGetByChunkPos;
     private static MethodHandle vs2GetTransform;
     private static MethodHandle vs2GetShipToWorld;
     private static MethodHandle vs2TransformPosition;
+    private static MethodHandle vs2GetWorldAABB;
+    private static MethodHandle vs2AabbMinX;
+    private static MethodHandle vs2AabbMinZ;
+    private static MethodHandle vs2AabbMaxX;
+    private static MethodHandle vs2AabbMaxZ;
     private static MethodHandle jomlVec3dCtor;
     private static MethodHandle jomlVec3dX;
     private static MethodHandle jomlVec3dY;
@@ -271,15 +329,41 @@ public final class PhysicsModBridge {
                 Class<?> holdingSubLevelClass = findClass("dev.ryanhcode.sable.sublevel.storage.HoldingSubLevel");
                 Class<?> subLevelDataClass = findClass("dev.ryanhcode.sable.sublevel.storage.serialization.SubLevelData");
                 Class<?> globalPtrClass = findClass("dev.ryanhcode.sable.sublevel.storage.holding.GlobalSavedSubLevelPointer");
+                Class<?> boundsClass = findClass(
+                    "dev.ryanhcode.sable.companion.math.BoundingBox3d",
+                    "dev.ryanhcode.sable.companion.math.BoundingBox3dc"
+                );
                 if (holdingSubLevelClass != null && subLevelDataClass != null) {
                     sableHoldingSubLevelData = findVirtualExact(lookup, holdingSubLevelClass, "data", subLevelDataClass);
                     sableDataFullTag = findVirtualExact(lookup, subLevelDataClass, "fullTag", CompoundTag.class);
                     sableDataOriginChunk = findVirtualExact(lookup, subLevelDataClass, "getOriginLoadedChunk", ChunkPos.class);
+                    sableDataUuid = findVirtualExact(lookup, subLevelDataClass, "uuid", UUID.class);
+                    if (boundsClass != null) {
+                        sableDataBounds = findVirtualExact(lookup, subLevelDataClass, "bounds", boundsClass);
+                        sableBoundsMinX = findVirtualExact(lookup, boundsClass, "minX", double.class);
+                        sableBoundsMinZ = findVirtualExact(lookup, boundsClass, "minZ", double.class);
+                        sableBoundsMaxX = findVirtualExact(lookup, boundsClass, "maxX", double.class);
+                        sableBoundsMaxZ = findVirtualExact(lookup, boundsClass, "maxZ", double.class);
+                    }
                     if (globalPtrClass != null) {
                         sableHoldingSubLevelPointer = findVirtualExact(lookup, holdingSubLevelClass, "pointer", globalPtrClass);
                         sablePointerChunkPos = findVirtualExact(lookup, globalPtrClass, "chunkPos", ChunkPos.class);
+                        sablePointerStorageIndex = findVirtualExact(lookup, globalPtrClass, "storageIndex", short.class);
+                        sablePointerSubLevelIndex = findVirtualExact(lookup, globalPtrClass, "subLevelIndex", short.class);
+                        try {
+                            sableGlobalPtrCtor = lookup.findConstructor(
+                                globalPtrClass, MethodType.methodType(void.class, ChunkPos.class, short.class, short.class));
+                        } catch (Throwable ignored) {
+                            // Optional pointer constructor
+                        }
+                        sableHoldingSnatchAndLoad = findVirtualExact(
+                            lookup, holdingMapClass, "snatchAndLoad", void.class, globalPtrClass, UUID.class);
                     }
+                    sableHoldingGetHoldingSubLevel = findVirtualExact(
+                        lookup, holdingMapClass, "getHoldingSubLevel", holdingSubLevelClass, UUID.class);
                 }
+                runDistanceManagerUpdatesHandle = findVirtualExact(
+                    lookup, ServerChunkCache.class, "runDistanceManagerUpdates", boolean.class);
             } catch (Throwable ignored) {
                 // Optional Sable server holding-chunk wakeup & offline cold-start bridge
             }
@@ -304,6 +388,10 @@ public final class PhysicsModBridge {
 
             vs2IsBlockInShipyard = findStatic(lookup, vsUtils, "isBlockInShipyard", Level.class, BlockPos.class);
             vs2GetShipManagingPos = findStatic(lookup, vsUtils, "getShipManagingPos", Level.class, BlockPos.class);
+            vs2GetShipObjectWorld = findStatic(lookup, vsUtils, "getShipObjectWorld", Level.class);
+            if (vs2GetShipObjectWorld == null) {
+                vs2GetShipObjectWorld = findStatic(lookup, vsUtils, "getShipObjectWorld", ServerLevel.class);
+            }
             jomlVec3dCtor = lookup.findConstructor(vec3dClass, MethodType.methodType(void.class, double.class, double.class, double.class));
             jomlVec3dX = lookup.findGetter(vec3dClass, "x", double.class);
             jomlVec3dY = lookup.findGetter(vec3dClass, "y", double.class);
@@ -345,6 +433,83 @@ public final class PhysicsModBridge {
             MixinGuard.logOnce("PhysicsModBridge.isInSablePlot", t);
         }
         return false;
+    }
+
+    /**
+     * Propagates chunk tickets to DistanceManager and wakes Sable's ServerSubLevelContainer
+     * across the full world-space bounding box of {@code loc} (falling back to {@code snatchAndLoad}
+     * if {@code updateChunkStatus}/{@code processChanges} did not yet load the SubLevel).
+     */
+    public static boolean wakeSableSubLevel(
+        ServerLevel level,
+        OfflineSubLevelLocation loc,
+        double plotX,
+        double plotY,
+        double plotZ
+    ) {
+        ensureInitialized();
+        if (!sableLoaded || level == null || loc == null) {
+            return false;
+        }
+        if (sableServerContainerClass == null || sableGetHoldingChunkMap == null
+            || sableHoldingUpdateChunkStatus == null || sableHoldingProcessChanges == null) {
+            return false;
+        }
+        try {
+            if (runDistanceManagerUpdatesHandle != null) {
+                try {
+                    runDistanceManagerUpdatesHandle.invoke(level.getChunkSource());
+                } catch (Throwable ignored) {
+                    // Best-effort ticket propagation
+                }
+            }
+            Object container = getSableContainer(level);
+            if (container == null || !sableServerContainerClass.isInstance(container)) {
+                return false;
+            }
+            Object holdingMap = sableGetHoldingChunkMap.invoke(container);
+            if (holdingMap == null) {
+                return false;
+            }
+            if (loc.hasChunkBounds()) {
+                for (int cx = loc.minChunkX(); cx <= loc.maxChunkX(); cx++) {
+                    for (int cz = loc.minChunkZ(); cz <= loc.maxChunkZ(); cz++) {
+                        sableHoldingUpdateChunkStatus.invoke(holdingMap, new ChunkPos(cx, cz), true);
+                    }
+                }
+            }
+            if (loc.holdingChunk() != null) {
+                sableHoldingUpdateChunkStatus.invoke(holdingMap, loc.holdingChunk(), true);
+            }
+            sableHoldingProcessChanges.invoke(holdingMap);
+
+            if (projectToWorld(level, plotX, plotY, plotZ) == null
+                && loc.subLevelUuid() != null
+                && sableHoldingSnatchAndLoad != null) {
+                Object pointer = null;
+                if (sableHoldingGetHoldingSubLevel != null && sableHoldingSubLevelPointer != null) {
+                    Object holdingSub = sableHoldingGetHoldingSubLevel.invoke(holdingMap, loc.subLevelUuid());
+                    if (holdingSub != null) {
+                        pointer = sableHoldingSubLevelPointer.invoke(holdingSub);
+                    }
+                }
+                if (pointer == null
+                    && sableGlobalPtrCtor != null
+                    && loc.holdingChunk() != null
+                    && loc.storageIdx() >= 0
+                    && loc.subLevelIdx() >= 0) {
+                    pointer = sableGlobalPtrCtor.invoke(
+                        loc.holdingChunk(), (short) loc.storageIdx(), (short) loc.subLevelIdx());
+                }
+                if (pointer != null) {
+                    sableHoldingSnatchAndLoad.invoke(holdingMap, pointer, loc.subLevelUuid());
+                }
+            }
+            return true;
+        } catch (Throwable t) {
+            MixinGuard.logOnce("PhysicsModBridge.wakeSableSubLevel", t);
+            return false;
+        }
     }
 
     /**
@@ -409,6 +574,16 @@ public final class PhysicsModBridge {
      *    write locks or mutating Sable's storage cache.
      */
     public static OfflineSubLevelLocation resolveOfflineSable(Level level, double x, double y, double z) {
+        return resolveOfflineSable(level, x, y, z, false);
+    }
+
+    public static OfflineSubLevelLocation resolveOfflineSable(
+        Level level,
+        double x,
+        double y,
+        double z,
+        boolean bypassNegativeCache
+    ) {
         ensureInitialized();
         if (!sableLoaded || level == null || level.isClientSide()) {
             return null;
@@ -446,9 +621,13 @@ public final class PhysicsModBridge {
             String plotKey = dimId + "#" + localPlotX + "," + localPlotZ;
             long now = System.currentTimeMillis();
 
-            Long negTs = NEGATIVE_OFFLINE_CACHE.get(plotKey);
-            if (negTs != null && (now - negTs) < NEGATIVE_CACHE_TTL_MS) {
-                return null;
+            if (bypassNegativeCache) {
+                NEGATIVE_OFFLINE_CACHE.remove(plotKey);
+            } else {
+                Long negTs = NEGATIVE_OFFLINE_CACHE.get(plotKey);
+                if (negTs != null && (now - negTs) < NEGATIVE_CACHE_TTL_MS) {
+                    return null;
+                }
             }
 
             Object holdingMap = sableGetHoldingChunkMap.invoke(container);
@@ -466,9 +645,9 @@ public final class PhysicsModBridge {
             // Tier 2a: Short-lived offline pose cache populated by a recent read-only scan
             OfflinePoseEntry cached = OFFLINE_POSE_CACHE.get(plotKey);
             if (cached != null && (now - cached.cachedAtMs()) < OFFLINE_CACHE_TTL_MS) {
-                PhysicsPosCore.Vec3d projected = cached.project(x, y, z);
-                if (projected != null) {
-                    return new OfflineSubLevelLocation(projected, cached.effectiveHoldingChunk());
+                OfflineSubLevelLocation loc = cached.toLocation(x, y, z);
+                if (loc != null) {
+                    return loc;
                 }
             }
 
@@ -480,10 +659,10 @@ public final class PhysicsModBridge {
                     scanSlvlsDirectoryReadOnly(folder, dimId, now);
                     OfflinePoseEntry scanned = OFFLINE_POSE_CACHE.get(plotKey);
                     if (scanned != null) {
-                        PhysicsPosCore.Vec3d projected = scanned.project(x, y, z);
-                        if (projected != null) {
+                        OfflineSubLevelLocation loc = scanned.toLocation(x, y, z);
+                        if (loc != null) {
                             NEGATIVE_OFFLINE_CACHE.remove(plotKey);
-                            return new OfflineSubLevelLocation(projected, scanned.effectiveHoldingChunk());
+                            return loc;
                         }
                     }
                 }
@@ -527,11 +706,23 @@ public final class PhysicsModBridge {
                 if (projected == null) {
                     continue;
                 }
+                UUID uuid = entry.header().subLevelUuid();
+                if (uuid == null && sableDataUuid != null) {
+                    uuid = (UUID) sableDataUuid.invoke(data);
+                }
                 ChunkPos holdingChunk = null;
+                int storageIdx = -1;
+                int subLevelIdx = -1;
                 if (sableHoldingSubLevelPointer != null && sablePointerChunkPos != null) {
                     Object ptr = sableHoldingSubLevelPointer.invoke(holdingSubLevel);
                     if (ptr != null) {
                         holdingChunk = (ChunkPos) sablePointerChunkPos.invoke(ptr);
+                        if (sablePointerStorageIndex != null) {
+                            storageIdx = (short) sablePointerStorageIndex.invoke(ptr);
+                        }
+                        if (sablePointerSubLevelIndex != null) {
+                            subLevelIdx = (short) sablePointerSubLevelIndex.invoke(ptr);
+                        }
                     }
                 }
                 if (holdingChunk == null && sableDataOriginChunk != null) {
@@ -540,12 +731,45 @@ public final class PhysicsModBridge {
                 if (holdingChunk == null) {
                     holdingChunk = entry.centerChunk();
                 }
-                return new OfflineSubLevelLocation(projected, holdingChunk);
+                SableOfflineStorage.ChunkBounds bounds = readInMemoryBounds(data, entry.header());
+                return new OfflineSubLevelLocation(
+                    projected,
+                    holdingChunk,
+                    uuid,
+                    storageIdx,
+                    subLevelIdx,
+                    bounds.minChunkX(),
+                    bounds.minChunkZ(),
+                    bounds.maxChunkX(),
+                    bounds.maxChunkZ()
+                );
             }
         } catch (Throwable ignored) {
             // Fall through to disk scan
         }
         return null;
+    }
+
+    private static SableOfflineStorage.ChunkBounds readInMemoryBounds(
+        Object data,
+        SableOfflineStorage.OfflineHeader header
+    ) {
+        if (sableDataBounds != null && sableBoundsMinX != null && sableBoundsMinZ != null
+            && sableBoundsMaxX != null && sableBoundsMaxZ != null) {
+            try {
+                Object box = sableDataBounds.invoke(data);
+                if (box != null) {
+                    double minX = (double) sableBoundsMinX.invoke(box);
+                    double minZ = (double) sableBoundsMinZ.invoke(box);
+                    double maxX = (double) sableBoundsMaxX.invoke(box);
+                    double maxZ = (double) sableBoundsMaxZ.invoke(box);
+                    return SableOfflineStorage.ChunkBounds.fromWorldAabb(minX, minZ, maxX, maxZ, header.centerChunk());
+                }
+            } catch (Throwable ignored) {
+                // Fall back to header bounds
+            }
+        }
+        return header.worldChunkBounds();
     }
 
     private static void scanSlvlsDirectoryReadOnly(Path folder, String dimId, long now) {
@@ -558,7 +782,7 @@ public final class PhysicsModBridge {
             SableOfflineStorage.OfflineHeader header = item.header();
             SableOfflineStorage.ChunkCoords hc = item.holdingChunk();
             ChunkPos holdingChunk = hc != null ? new ChunkPos(hc.x(), hc.z()) : null;
-            OfflinePoseEntry entry = new OfflinePoseEntry(header, holdingChunk, now);
+            OfflinePoseEntry entry = new OfflinePoseEntry(header, holdingChunk, item.storageIdx(), item.subLevelIdx(), now);
             OFFLINE_POSE_CACHE.put(dimId + "#" + entry.plotX() + "," + entry.plotZ(), entry);
         }
     }
@@ -593,10 +817,19 @@ public final class PhysicsModBridge {
         double qy = oriTag != null ? PhysicsPosStorage.nbtDouble(oriTag, "y", 0.0) : 0.0;
         double qz = oriTag != null ? PhysicsPosStorage.nbtDouble(oriTag, "z", 0.0) : 0.0;
         double qw = oriTag != null ? PhysicsPosStorage.nbtDouble(oriTag, "w", 1.0) : 1.0;
+
+        CompoundTag boundsTag = PhysicsPosStorage.nbtCompound(tag, "world_bounds");
+        boolean hasBounds = boundsTag != null;
+        double minX = hasBounds ? PhysicsPosStorage.nbtDouble(boundsTag, "minX", 0.0) : 0.0;
+        double minZ = hasBounds ? PhysicsPosStorage.nbtDouble(boundsTag, "minZ", 0.0) : 0.0;
+        double maxX = hasBounds ? PhysicsPosStorage.nbtDouble(boundsTag, "maxX", 0.0) : 0.0;
+        double maxZ = hasBounds ? PhysicsPosStorage.nbtDouble(boundsTag, "maxZ", 0.0) : 0.0;
+
         SableOfflineStorage.OfflineHeader header = new SableOfflineStorage.OfflineHeader(
-            plotX, plotZ, posX, posY, posZ, qx, qy, qz, qw, rotX, rotY, rotZ
+            null, plotX, plotZ, posX, posY, posZ, qx, qy, qz, qw, rotX, rotY, rotZ,
+            hasBounds, minX, minZ, maxX, maxZ
         );
-        return new OfflinePoseEntry(header, null, now);
+        return new OfflinePoseEntry(header, null, -1, -1, now);
     }
 
     private static PhysicsPosCore.Vec3d projectSable(Level level, double x, double y, double z) {
@@ -634,41 +867,145 @@ public final class PhysicsModBridge {
         return false;
     }
 
-    private static PhysicsPosCore.Vec3d projectVs2(Level level, double x, double y, double z) {
-        try {
-            if (vs2GetShipManagingPos == null) {
-                return null;
-            }
+    private static Object findVs2Ship(Level level, double x, double y, double z) throws Throwable {
+        if (vs2GetShipManagingPos != null) {
             Object ship = vs2GetShipManagingPos.invoke(level, BlockPos.containing(x, y, z));
+            if (ship != null) {
+                return ship;
+            }
+        }
+        if (vs2GetShipObjectWorld != null && level != null) {
+            Object shipWorld = vs2GetShipObjectWorld.invoke(level);
+            if (shipWorld != null) {
+                if (vs2GetAllShips == null) {
+                    synchronized (PhysicsModBridge.class) {
+                        if (vs2GetAllShips == null) {
+                            MethodHandles.Lookup lookup = MethodHandles.publicLookup();
+                            vs2GetAllShips = lookup.unreflect(shipWorld.getClass().getMethod("getAllShips"));
+                        }
+                    }
+                }
+                Object allShips = vs2GetAllShips.invoke(shipWorld);
+                if (allShips != null) {
+                    if (vs2AllShipsGetByChunkPos == null) {
+                        synchronized (PhysicsModBridge.class) {
+                            if (vs2AllShipsGetByChunkPos == null) {
+                                MethodHandles.Lookup lookup = MethodHandles.publicLookup();
+                                vs2AllShipsGetByChunkPos = lookup.unreflect(
+                                    allShips.getClass().getMethod("getByChunkPos", int.class, int.class));
+                            }
+                        }
+                    }
+                    int cx = ((int) Math.floor(x)) >> 4;
+                    int cz = ((int) Math.floor(z)) >> 4;
+                    return vs2AllShipsGetByChunkPos.invoke(allShips, cx, cz);
+                }
+            }
+        }
+        return null;
+    }
+
+    private static PhysicsPosCore.Vec3d projectVs2Ship(Object ship, double x, double y, double z) throws Throwable {
+        if (ship == null) {
+            return null;
+        }
+        if (vs2GetTransform == null) {
+            synchronized (PhysicsModBridge.class) {
+                if (vs2GetTransform == null) {
+                    MethodHandles.Lookup lookup = MethodHandles.publicLookup();
+                    Method getTransformMethod = ship.getClass().getMethod("getTransform");
+                    vs2GetTransform = lookup.unreflect(getTransformMethod);
+                    Object transform = vs2GetTransform.invoke(ship);
+                    Method getShipToWorldMethod = transform.getClass().getMethod("getShipToWorld");
+                    vs2GetShipToWorld = lookup.unreflect(getShipToWorldMethod);
+                    Object matrix = vs2GetShipToWorld.invoke(transform);
+                    Class<?> vec3dClass = Class.forName("org.joml.Vector3d");
+                    Method transformPosMethod = matrix.getClass().getMethod("transformPosition", vec3dClass);
+                    vs2TransformPosition = lookup.unreflect(transformPosMethod);
+                }
+            }
+        }
+        Object transform = vs2GetTransform.invoke(ship);
+        if (transform == null) return null;
+        Object matrix = vs2GetShipToWorld.invoke(transform);
+        if (matrix == null) return null;
+        Object vec = jomlVec3dCtor.invoke(x, y, z);
+        Object transformed = vs2TransformPosition.invoke(matrix, vec);
+        double wx = (double) jomlVec3dX.invoke(transformed);
+        double wy = (double) jomlVec3dY.invoke(transformed);
+        double wz = (double) jomlVec3dZ.invoke(transformed);
+        return new PhysicsPosCore.Vec3d(wx, wy, wz);
+    }
+
+    public static OfflineSubLevelLocation resolveVs2ShipBounds(Level level, double x, double y, double z) {
+        ensureInitialized();
+        if (!vs2Loaded || level == null) {
+            return null;
+        }
+        try {
+            Object ship = findVs2Ship(level, x, y, z);
             if (ship == null) {
                 return null;
             }
-            if (vs2GetTransform == null) {
-                synchronized (PhysicsModBridge.class) {
-                    if (vs2GetTransform == null) {
-                        MethodHandles.Lookup lookup = MethodHandles.publicLookup();
-                        Method getTransformMethod = ship.getClass().getMethod("getTransform");
-                        vs2GetTransform = lookup.unreflect(getTransformMethod);
-                        Object transform = vs2GetTransform.invoke(ship);
-                        Method getShipToWorldMethod = transform.getClass().getMethod("getShipToWorld");
-                        vs2GetShipToWorld = lookup.unreflect(getShipToWorldMethod);
-                        Object matrix = vs2GetShipToWorld.invoke(transform);
-                        Class<?> vec3dClass = Class.forName("org.joml.Vector3d");
-                        Method transformPosMethod = matrix.getClass().getMethod("transformPosition", vec3dClass);
-                        vs2TransformPosition = lookup.unreflect(transformPosMethod);
+            PhysicsPosCore.Vec3d worldPos = projectVs2Ship(ship, x, y, z);
+            if (worldPos == null) {
+                return null;
+            }
+            SableOfflineStorage.ChunkCoords center = new SableOfflineStorage.ChunkCoords(
+                ((int) Math.floor(worldPos.x())) >> 4,
+                ((int) Math.floor(worldPos.z())) >> 4
+            );
+            SableOfflineStorage.ChunkBounds bounds = SableOfflineStorage.ChunkBounds.aroundCenter(
+                center, SableOfflineStorage.ChunkBounds.DEFAULT_FALLBACK_RADIUS);
+            try {
+                if (vs2GetWorldAABB == null) {
+                    synchronized (PhysicsModBridge.class) {
+                        if (vs2GetWorldAABB == null) {
+                            MethodHandles.Lookup lookup = MethodHandles.publicLookup();
+                            vs2GetWorldAABB = lookup.unreflect(ship.getClass().getMethod("getWorldAABB"));
+                            Object aabb = vs2GetWorldAABB.invoke(ship);
+                            if (aabb != null) {
+                                vs2AabbMinX = lookup.unreflect(aabb.getClass().getMethod("minX"));
+                                vs2AabbMinZ = lookup.unreflect(aabb.getClass().getMethod("minZ"));
+                                vs2AabbMaxX = lookup.unreflect(aabb.getClass().getMethod("maxX"));
+                                vs2AabbMaxZ = lookup.unreflect(aabb.getClass().getMethod("maxZ"));
+                            }
+                        }
                     }
                 }
+                Object aabb = vs2GetWorldAABB != null ? vs2GetWorldAABB.invoke(ship) : null;
+                if (aabb != null && vs2AabbMinX != null && vs2AabbMinZ != null
+                    && vs2AabbMaxX != null && vs2AabbMaxZ != null) {
+                    double minX = (double) vs2AabbMinX.invoke(aabb);
+                    double minZ = (double) vs2AabbMinZ.invoke(aabb);
+                    double maxX = (double) vs2AabbMaxX.invoke(aabb);
+                    double maxZ = (double) vs2AabbMaxZ.invoke(aabb);
+                    bounds = SableOfflineStorage.ChunkBounds.fromWorldAabb(minX, minZ, maxX, maxZ, center);
+                }
+            } catch (Throwable ignored) {
+                // Fall back to center ± 2 if getWorldAABB is unavailable
             }
-            Object transform = vs2GetTransform.invoke(ship);
-            if (transform == null) return null;
-            Object matrix = vs2GetShipToWorld.invoke(transform);
-            if (matrix == null) return null;
-            Object vec = jomlVec3dCtor.invoke(x, y, z);
-            Object transformed = vs2TransformPosition.invoke(matrix, vec);
-            double wx = (double) jomlVec3dX.invoke(transformed);
-            double wy = (double) jomlVec3dY.invoke(transformed);
-            double wz = (double) jomlVec3dZ.invoke(transformed);
-            return new PhysicsPosCore.Vec3d(wx, wy, wz);
+            return new OfflineSubLevelLocation(
+                worldPos,
+                new ChunkPos(center.x(), center.z()),
+                null,
+                -1,
+                -1,
+                bounds.minChunkX(),
+                bounds.minChunkZ(),
+                bounds.maxChunkX(),
+                bounds.maxChunkZ()
+            );
+        } catch (Throwable t) {
+            MixinGuard.logOnce("PhysicsModBridge.resolveVs2ShipBounds", t);
+            return null;
+        }
+    }
+
+    private static PhysicsPosCore.Vec3d projectVs2(Level level, double x, double y, double z) {
+        try {
+            Object ship = findVs2Ship(level, x, y, z);
+            return projectVs2Ship(ship, x, y, z);
         } catch (Throwable t) {
             MixinGuard.logOnce("PhysicsModBridge.projectVs2", t);
         }
