@@ -2,8 +2,6 @@
 
 <p align="center"><img src="common/src/main/resources/icon.png" alt="Waystones Item Cost Extended" width="192" /></p>
 
-<!-- PROJECT_PAGE_START -->
-
 **Waystones Item Cost Extended** makes item-based [Waystones](https://modrinth.com/mod/waystones) fees practical for survival servers and modpacks: pay with blocks or nuggets and get exact change back, pull payment items straight out of Bundles and Shulker Boxes, pay with [Lightman's Currency](https://modrinth.com/mod/lightmans-currency) wallets, and teleport cleanly to Waystones mounted on **Sable** or **Valkyrien Skies 2** airships and ships — even when parked in unloaded chunks.
 
 ![Waystone Payment & Change Breakdown](docs/screenshots/01-waystone-payment-tooltip.png)
@@ -84,25 +82,6 @@ Editable in-game via **Mod Menu** (Fabric) or **Mods → Config** (Forge / NeoFo
 
 ---
 
-## Supported Versions (2.1.4)
+## Requirements
 
-Requires **[Waystones](https://modrinth.com/mod/waystones)** and **[Balm](https://modrinth.com/mod/balm)**. No other libraries needed.
-
-| Minecraft | Loaders | Optional Lightman's Currency |
-|---|---|---|
-| `1.20.1` | Fabric, Forge | Forge |
-| `1.21.1` | Fabric, NeoForge | NeoForge |
-| `26.1.2` | Fabric, NeoForge | NeoForge |
-| `26.2` | Fabric, NeoForge | — |
-| `26.3` | Fabric, NeoForge | — |
-
-<!-- PROJECT_PAGE_END -->
-
----
-
-## Building
-
-```bash
-./scripts/setup-hooks.sh
-./scripts/verify.sh [--container]
-```
+Requires **[Waystones](https://modrinth.com/mod/waystones)** and **[Balm](https://modrinth.com/mod/balm)**.
